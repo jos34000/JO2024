@@ -1,0 +1,6 @@
+[submodule "api-jo2024"]
+	path = api-jo2024
+	url = git@github.com:jos34000/api-jo2024.git
+[submodule "ui-jo2024"]
+	path = ui-jo2024
+	url = git@github.com:jos34000/ui-jo2024.git

@@ -1,0 +1,245 @@
+ID;Titre;Pré-conditions;Étapes de test;Données de test;Résultat attendu;Méthode de test
+MODULE 1 : AUTHENTIFICATION & GESTION DE COMPTE;;;;;;
+AUTH-01;Création de compte avec données valides;Aucun compte existant avec cet email;"1. Accéder à la page d'inscription
+2. Saisir nom et prénom
+3. Saisir email valide
+4. Saisir mot de passe conforme
+5. Cliquer sur 'Créer un compte'";"Email: jocelynsainson@marcelyn.fr
+Nom: Sainson
+Prénom: Jocelyn
+Mot de passe: UnSuperMotDePasse!20";"- Compte créé
+- Message de confirmation
+- Redirection";Script
+AUTH-02;Création avec email déjà existant;Compte existe avec jocelynsainson@marcelyn.fr;"1. Accéder à l'inscription
+2. Saisir nom et prénom
+3. Saisir email déjà utilisé
+4. Saisir mot de passe valide
+5. Cliquer sur 'Créer'";"Email: jocelynsainson@marcelyn.fr (existant)
+Nom: Sainson
+Prénom: Jocelyn
+Mot de passe: UnSuperMotDePasse!20";"- Message d'erreur: 'Email déjà utilisé'
+- Pas de création
+- Reste sur page inscription";Script
+AUTH-03;Création avec mot de passe non conforme;Aucun compte existant;"1. Accéder à l'inscription
+2. Saisir informations
+3. Saisir mot de passe simple '123'
+4. Cliquer sur 'Créer'";"Email: test@test.com
+Mot de passe: 123";"- Message d'erreur avec critères
+- Pas de création
+- Reste sur page";Script
+AUTH-04;Création avec format email invalide;Aucun compte existant;"1. Accéder à l'inscription
+2. Saisir email invalide
+3. Compléter autres champs
+4. Cliquer sur 'Créer'";"Email: test.com (invalide)
+Mot de passe: UnSuperMotDePasse!20";"- Message: 'Format email invalide'
+- Pas de création";Script
+AUTH-05;Création avec champs obligatoires manquants;Page inscription affichée;"1. Accéder à l'inscription
+2. Laisser champs vides
+3. Cliquer sur 'Créer'";Tous les champs : vide;"- Message champs obligatoires
+- Focus premier champ vide";Script
+AUTH-06;Connexion réussie avec identifiants valides;Compte existant jocelynsainson@marcelyn.fr;"1. Accéder à connexion
+2. Saisir email
+3. Saisir mot de passe
+4. Cliquer 'Connexion'";"Email: jocelynsainson@marcelyn.fr 
+Mot de passe: UnSuperMotDePasse!20";"- Authentification réussie
+- Redirection tableau de bord
+- Session active
+- Bouton Déconnexion visible";Script
+AUTH-07;Connexion avec mot de passe incorrect;Compte existant jocelynsainson@marcelyn.fr;"1. Accéder à connexion
+2. Saisir email correct
+3. Saisir mauvais mot de passe
+4. Cliquer 'Connexion'";"Email: jocelynsainson@marcelyn.fr
+Mot de passe: MauvaisMDP";"- Message: 'Identifiants incorrects'
+- Pas de connexion";Script
+AUTH-08;Connexion avec email inexistant;Aucun compte inexistant@test.com;"1. Accéder à connexion
+2. Saisir email inexistant
+3. Saisir mot de passe
+4. Cliquer 'Connexion'";"Email: inexistant@test.com
+Mot de passe: Test123!@#";"- Message: 'Identifiants incorrects'
+- Pas de connexion";Script
+AUTH-09;Connexion avec champs vides;Page connexion affichée;"1. Accéder à connexion
+2. Laisser champs vides
+3. Cliquer 'Connexion'";"Email: vide
+Mot de passe: vide";"- Message: 'Remplir tous les champs'
+- Focus premier champ";Script
+AUTH-10;Déconnexion réussie;Utilisateur connecté;"1. Être connecté
+2. Cliquer 'Déconnexion'
+3. Confirmer si demandé";User: jocelynsainson@marcelyn.fr connecté;"- Session terminée
+- Redirection page accueil
+- Pages protégées inaccessibles";Script
+MODULE 2 : GESTION DES OFFRES;;;;;;
+OFFRES-01;Affichage de toutes les offres disponibles;Offres (solo, duo, familiale) existent en BD;"1. Accéder à la page des offres
+2. Observer l'affichage";Offres en BD: Solo, Duo, Familiale;"- 3 offres affichées
+- Détails de chaque offre visibles (nom, prix, nb personnes)
+- Bouton 'Ajouter au panier' pour chaque offre";Script
+OFFRES-02;Affichage détails offre Solo;Page offres affichée;"1. Localiser offre Solo
+2. Vérifier informations affichées";Offre Solo: 1 personne, prix 45€;"- Nom: Solo
+- Description: 1 personne
+- Prix affiché
+- Bouton 'Ajouter au panier'";Script
+OFFRES-03;Affichage détails offre Duo;Page offres affichée;"1. Localiser offre Duo
+2. Vérifier informations";Offre Duo: 2 personnes, prix 85€;"- Nom: Duo
+- Description: 2 personnes
+- Prix affiché";Script
+OFFRES-04;Affichage détails offre Familiale;Page offres affichée;"1. Localiser offre Familiale
+2. Vérifier informations";Offre Familiale: 4 personnes, prix 150€;"- Nom: Familiale
+- Description: 4 billets inclus
+- Prix affiché";Script
+OFFRES-05;Sélection d'une offre Solo;Page offres affichée, panier vide;"1. Cliquer sur 'Ajouter au panier' pour offre Solo
+2. Vérifier compteur ";Offre: Solo;"- Message confirmation ajout
+- Offre ajoutée au panier
+- Compteur panier mis à jour";Script
+OFFRES-06;Sélection d'une offre Duo;Page offres affichée;"1. Cliquer 'Ajouter au panier' pour Duo
+2. Vérifier ajout";Offre: Duo;"- Confirmation ajout
+- Offre dans panier
+- Compteur panier +1";Script
+OFFRES-07;Sélection d'une offre Familiale;Page offres affichée;"1. Cliquer 'Ajouter au panier' pour Familiale
+2. Vérifier ajout";Offre: Familiale;"- Confirmation ajout
+- Offre dans panier";Script
+OFFRES-08;Ajout multiple d'offres différentes;Page offres affichée, panier vide;"1. Ajouter offre Solo
+2. Ajouter offre Duo
+3. Vérifier panier";Offres: Solo + Duo;"- 2 offres dans panier
+- Compteur panier = 2
+- Prix total mis à jour";Script
+MODULE 3 : PANIER;;;;;;
+PANIER-01;Accès au panier avec articles;1 offre Solo ajoutée au panier;"1. Cliquer sur icône/lien panier
+2. Vérifier le contenu";Panier: 1x Solo;"- Page panier affichée
+- Offre Solo visible avec détails
+- Prix total affiché
+- Bouton 'Passer commande'";Script
+PANIER-02;Accès au panier vide;Panier vide;"1. Cliquer sur panier
+2. Vérifier le contenu";Panier: vide;"- Message: 'Votre panier est vide'
+- Lien vers page offres
+- Pas de bouton commande";Script
+PANIER-03;Modification quantité dans panier;1 offre Solo dans panier;"1. Accéder au panier
+2. Modifier quantité à 2
+3. Valider";Panier: 1x Solo → 2x Solo;"- Quantité mise à jour: 2
+- Prix total recalculé (x2)
+- Confirmation visuelle";Script
+PANIER-04;Suppression d'un article du panier;1 offre Solo dans panier;"1. Accéder au panier
+2. Cliquer bouton supprimer
+3. Confirmer si demandé";Panier: 1x Solo;"- Article supprimé
+- Panier vide
+- Message 'Panier vide'
+- Prix total = 0";Script
+PANIER-05;Suppression partielle (panier multi-articles);Solo + Duo dans panier;"1. Accéder au panier
+2. Supprimer uniquement Solo
+3. Observer";Panier: Solo + Duo;"- Solo supprimé
+- Duo reste
+- Prix mis à jour (prix Duo seul)";Script
+PANIER-06;Calcul du prix total avec plusieurs offres;Panier vide;"1. Ajouter 2x Solo
+2. Ajouter 1x Duo
+3. Accéder au panier
+4. Vérifier calcul";"Solo=45€, Duo=85€
+Panier: 2xSolo + 1xDuo";"- Total = 175€
+- Détail par ligne affiché
+- Total correct en bas de panier";Script
+PANIER-07;Tentative validation panier non-authentifié;Panier avec articles, utilisateur non connecté;"1. Accéder au panier
+2. Cliquer 'Passer commande'
+3. Observer redirection";"User: non connecté
+Panier: 1x Solo";"- Redirection vers page connexion
+- Message: 'Connectez-vous pour commander'
+- Panier conservé";Script
+MODULE 4 : PAIEMENT;;;;;;
+PAIEMENT-01;Accès à la page de paiement;Utilisateur connecté, panier avec 1 offre;"1. Depuis panier, cliquer 'Passer commande'
+2. Vérifier page de paiement";"User: connecté
+Panier: 1x Solo";"- Page paiement affichée
+- Récapitulatif commande
+- Montant total
+- Formulaire/bouton paiement";Script
+PAIEMENT-02;Paiement réussi (mock);Sur page paiement, commande 1x Solo;"1. Cliquer bouton 'Payer'
+2. Simuler paiement réussi (mock)
+3. Observer résultat";"Montant: 45€
+Paiement: simulé OK";"- Message: 'Paiement réussi'
+- Clé de paiement générée
+- Redirection page confirmation
+- Commande enregistrée";Script
+PAIEMENT-03;Échec paiement (mock);Sur page paiement;"1. Cliquer 'Payer'
+2. Simuler échec paiement
+3. Observer";Paiement: simulé échec;"- Message: 'Paiement échoué'
+- Pas de clé générée
+- Reste sur page paiement
+- Possibilité réessayer";Script
+PAIEMENT-04;Récapitulatif avant paiement;Sur page paiement, panier 2xSolo + 1xDuo;"1. Observer récapitulatif
+2. Vérifier détails affichés";"Panier: 2xSolo + 1xDuo
+Total: 175€";"- Liste articles avec quantités
+- Prix unitaires affichés
+- Total = 175€
+- Nom utilisateur affiché";Script
+PAIEMENT-05;Annulation du paiement;Sur page paiement;"1. Cliquer 'Annuler' ou 'Retour'
+2. Observer comportement";Paiement non effectué;"- Retour au panier
+- Panier conservé
+- Aucune commande créée
+- Aucune clé générée";Script
+MODULE 5 : GÉNÉRATION E-BILLETS & QR CODE;;;;;;
+EBILLET-01;Téléchargement e-billet;Commande confirmée, QR code généré;"1. Sur page confirmation
+2. Cliquer 'Télécharger e-billet'
+3. Observer téléchargement";Commande #123 confirmée;"- Fichier PDF téléchargé
+- PDF contient QR code
+- PDF contient infos: nom, offre, date
+- Nom fichier: ebillet_123.pdf";Capture & Replay
+EBILLET-02;Affichage e-billet dans compte utilisateur;Utilisateur connecté, commande passée;"1. Accéder à 'Mes billets'
+2. Observer liste
+3. Cliquer sur un e-billet";User a 1 commande: Solo;"- Liste des e-billets affichée
+- Détails offre visibles
+- QR code affiché
+- Bouton télécharger PDF";Script
+EBILLET-03;Contenu du QR code (vérification données);QR code généré;"1. Scanner QR code (outil externe)
+2. Décoder contenu
+3. Vérifier données";QR code de commande #123;"- Contenu = clé combinée
+- Données décodables
+- Format attendu respecté
+- Heure achat + nom user inclus";Manuel
+MODULE 6 : ADMINISTRATION;;;;;;
+ADMIN-01;Accès espace administrateur;Compte admin existe (fourni);"1. Se connecter avec identifiants admin
+2. Accéder à l'espace admin";"User: admin@jo2024.fr
+Role: Administrateur";"- Connexion réussie
+- Espace admin accessible
+- Menu admin visible
+- Fonctions admin disponibles";Script
+ADMIN-02;Visualisation nombre de ventes par offre;Connecté admin, ventes enregistrées;"1. Accéder à 'Statistiques ventes'
+2. Observer données affichées";Ventes: 10xSolo, 5xDuo, 3xFamiliale;"- Tableau/graphique ventes
+- Solo: 10 ventes
+- Duo: 5 ventes
+- Familiale: 3 ventes
+- Total visible";Script
+ADMIN-03;Visualisation liste des offres;Connecté admin, offres en BD;"1. Accéder à 'Gestion offres'
+2. Observer liste";BD: Solo, Duo, Familiale;"- Liste 3 offres affichée
+- Détails par offre: nom, prix, capacité
+- Boutons: Modifier, Supprimer
+- Bouton 'Ajouter offre'";Script
+ADMIN-04;Création d'une nouvelle offre;Connecté admin, sur page gestion offres;"1. Cliquer 'Ajouter offre'
+2. Remplir formulaire (nom, prix, capacité)
+3. Valider
+4. Vérifier création";"Nom: Premium
+Prix: 150€
+Capacité: 2 personnes";"- Offre Premium créée
+- Visible dans liste admin
+- Visible côté client (page offres)
+- Message confirmation";Script
+ADMIN-05;Modification d'une offre existante;Connecté admin, offre Solo existe;"1. Cliquer 'Modifier' sur offre Solo
+2. Changer prix de 45€ à 50€
+3. Valider
+4. Vérifier modification";Offre Solo: 45€ → 50€;"- Prix mis à jour en BD
+- Nouveau prix affiché admin
+- Nouveau prix visible côté client
+- Message confirmation";Script
+ADMIN-06;Suppression d'une offre;Connecté admin, offre test existe;"1. Cliquer 'Supprimer' sur offre test
+2. Confirmer suppression
+3. Vérifier suppression";Offre: Test à supprimer;"- Offre supprimée de BD
+- Plus visible en admin
+- Plus visible côté client
+- Message confirmation";Script
+ADMIN-07;Validation protection espace admin;Utilisateur standard connecté (non-admin);"1. Tenter accès direct URL admin
+2. Observer comportement";User: user@test.com (non-admin);"- Accès refusé
+- Message: 'Accès non autorisé'
+- Redirection page accueil
+- Espace admin inaccessible";Script
+ADMIN-08;Tentative création offre avec données invalides;Connecté admin, sur formulaire ajout offre;"1. Remplir avec prix négatif
+2. Tenter valider
+3. Observer erreur";"Nom: Test
+Prix: -10€
+Capacité: 1";"- Message erreur validation
+- Offre non créée
+- Reste sur formulaire
+- Indication champ en erreur";Script

@@ -1,0 +1,200 @@
+ID;RISQUE;DESCRIPTION DÉTAILLÉE;PROBABILITÉ;IMPACT;CRITICITÉ
+R01;Défaillance système lors des pics de connexion;"Le système doit supporter plusieurs millions de connexions simultanées, particulièrement :
+• Lors de l'ouverture des ventes (pic maximum attendu)
+• Pour les événements les plus populaires (finales, cérémonies)
+• Pendant les périodes de forte affluence
+
+CONSÉQUENCES :
+• Crash complet du système
+• Timeout et erreurs pour les utilisateurs
+• Impossibilité de réserver = perte de revenus
+• Impact sur l'image de la France";"ÉLEVÉE
+(>50%)";CRITIQUE;CRITIQUE
+R07;Retard de développement;"FACTEURS DE RISQUE :
+• Périmètre fonctionnel important et complexe
+• Exigences de sécurité élevées (temps de développement)
+• Risque de dérive du scope (feature creep)
+
+CONSÉQUENCES :
+• Livraison partielle = fonctionnalités manquantes
+• Mise en production précipitée = bugs critiques
+• Tests insuffisants = qualité compromise
+• Impossibilité de tenir l'événement = catastrophe";"ÉLEVÉE
+(>50%)";ÉLEVÉ;CRITIQUE
+R02;Failles de sécurité dans l'authentification;"MENACES POTENTIELLES :
+• Attaques par force brute sur mots de passe
+• Injection SQL dans formulaires de login
+• Session hijacking / vol de cookies
+• Phishing et social engineering
+• Violations de données (data breach)
+
+CONSÉQUENCES :
+• Accès non autorisé aux comptes utilisateurs
+• Vol de billets et revente frauduleuse
+• Usurpation d'identité";"MOYENNE
+(20-50%)";CRITIQUE;ÉLEVÉE
+R03;Génération de faux e-tickets;"SCÉNARIOS DE FRAUDE :
+• Duplication de QR codes existants
+• Génération de fausses clés de sécurité
+• Reverse engineering de l'algorithme
+• Corruption d'employés vendant de vraies clés
+• Attaque man-in-the-middle lors génération
+
+CONSÉQUENCES :
+• Perte financière directe (billets non payés)
+• Personnes non autorisées dans le système
+• Chaos aux entrées si tickets multiples pour même place
+• Utilisateurs légitimes refusés à tort
+• Dégâts d'image majeurs pour les JO";"MOYENNE
+(20-50%)";ÉLEVÉ;ÉLEVÉE
+R05;Problèmes de paiement;"PROBLÈMES POTENTIELS :
+• Timeout lors de la transaction
+• Échec de connexion a stripe
+• Carte refusée (fonds insuffisants, limite dépassée)
+• Double débit du compte client
+• Paiement réussi mais non confirmé côté application
+• 3D Secure échoué
+
+CONSÉQUENCES :
+• Frustration utilisateur majeure
+• Abandon du tunnel de conversion = perte revenus
+• Double débit = remboursements = charge administrative";"MOYENNE
+(20-50%)";ÉLEVÉ;ÉLEVÉE
+R13;Attaque DDoS;"TYPES D'ATTAQUES :
+• Saturation bande passante
+• Grand nombre de machines zombies
+
+MOTIVATIONS :
+• Groupe hacktiviste politique
+• Extorsion (rançon pour arrêter)
+
+CONSÉQUENCES :
+• Site inaccessible = impossibilité de réserver
+• Perte de revenus directe
+• Impact d'image catastrophique
+• Frustration = bad buzz";"MOYENNE
+(20-50%)";ÉLEVÉ;ÉLEVÉE
+R17;Dépendance fournisseurs externes critiques;"FOURNISSEURS CRITIQUES :
+• Prestataires de paiement (Stripe)
+• Service d'emails (Resend)
+• CDN (Cloudflare)
+
+RISQUES :
+• Panne chez le fournisseur
+• Augmentation soudaine des prix
+• Changement de politique/conditions
+• Faillite ou rachat du fournisseur
+• Problème de support technique
+
+CONSÉQUENCES :
+• Indisponibilité totale ou partielle du service
+• Impossibilité d'envoyer emails confirmation
+• Impossibilité de traiter paiements
+• Coûts imprévus importants";"MOYENNE
+(20-50%)";ÉLEVÉ;ÉLEVÉE
+R04;Erreurs dans la génération des QR codes;"CAUSES POSSIBLES :
+• Bug dans la librairie de génération
+• Mauvais encodage des données
+• Problème d'encodage caractères spéciaux
+
+CONSÉQUENCES :
+• Utilisateur ne peut pas accéder à l'événement
+• Frustration élevée
+• Files d'attente aux guichets
+• Remboursements et compensations";"FAIBLE
+(<20%)";ÉLEVÉ;MOYENNE
+R06;Impossibilité de scanner les e-tickets;"CAUSES POSSIBLES :
+• Scanners défaillants (batterie, matériel)
+• Connexion réseau coupée
+• Application de scan plantée
+• QR codes illisibles (écran cassé, luminosité)
+• Formation insuffisante du personnel
+
+CONSÉQUENCES :
+• Files d'attente interminables
+• Retard sur début des épreuves
+• Frustration des spectateurs";"FAIBLE
+(<20%)";CRITIQUE;MOYENNE
+R08;Tests insuffisants avant mise en production;"CAUSES :
+• Pression sur délais = raccourcis qualité
+• Tests manuels seulement = couverture faible
+• Pas de tests de charge = surprises en prod
+• Environnement de test != production
+
+CONSÉQUENCES :
+• Bugs critiques affectant utilisateurs
+• Indisponibilité du service
+• Expérience utilisateur catastrophique
+• Perte de crédibilité";"MOYENNE
+(20-50%)";ÉLEVÉ;ÉLEVÉE
+R09;Formation personnel de contrôle inadéquate;"PROBLÈMES :
+• Staff ne maîtrise pas les outils
+• Ne sait pas gérer les cas particuliers
+• Procédures non comprises
+• Stress le jour J
+
+CONSÉQUENCES :
+• Ralentissements aux entrées
+• Erreurs dans contrôle des billets
+• Mauvaise expérience visiteur";"MOYENNE
+(20-50%)";MOYEN;MOYENNE
+R10;Non-conformité RGPD;"DONNÉES SENSIBLES COLLECTÉES :
+• Nom, prénom, email, téléphone
+• Moyen de paiement
+• Clés de sécurité
+• Historique d'achats
+• Données de connexion (IP, device)
+
+RISQUES DE NON-CONFORMITÉ :
+• Consentement pas assez explicite
+• Finalités pas clairement définies
+• Conservation trop longue des données
+• Pas de possibilité de suppression
+• Fuite de données personnelles";"FAIBLE
+(<20%)";ÉLEVÉ;MOYENNE
+R12;Perte ou corruption de la base de données;"CAUSES POSSIBLES :
+• Défaillance matérielle
+• Erreur humaine (commande DELETE malencontreuse)
+• Attaque ransomware
+• Bug logiciel
+
+CONSÉQUENCES :
+• Perte de toutes les réservations
+• Impossibilité de savoir qui a acheté quoi
+• Chaos total le jour J
+• Impossibilité de facturer/rembourser";"FAIBLE
+(<20%)";CRITIQUE;MOYENNE
+R14;Expérience utilisateur dégradée;"PROBLÈMES POSSIBLES :
+• Interface confuse, pas intuitive
+• Processus de réservation trop long
+• Trop de champs obligatoires
+• Bugs d'affichage
+• Lenteurs
+
+CONSÉQUENCES :
+• Taux d'abandon élevé
+• Mauvaises notes/avis
+• Bouche-à-oreille négatif
+• Objectifs de vente non atteints";"MOYENNE
+(20-50%)";MOYEN;MOYENNE
+R16;Problèmes lors du déploiement en production;"CAUSES POSSIBLES :
+• Bug non détecté en pré prod
+• Incompatibilité environnement
+• Migration BDD échouée
+• Configuration incorrecte
+• Dépendance manquante
+
+CONSÉQUENCES :
+• Site inaccessible
+• Fonctionnalités cassées
+• Perte de données potentielle";"FAIBLE
+(<20%)";ÉLEVÉ;MOYENNE
+R18;Pic de demande imprévisible;"SCÉNARIOS :
+• Promotion exceptionnelle
+• Événement de dernière minute
+
+CONSÉQUENCES :
+• Système saturé
+• Utilisateurs déçus
+• Opportunité commerciale ratée";"MOYENNE
+(20-50%)";MOYEN;MOYENNE
