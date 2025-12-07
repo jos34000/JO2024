@@ -1,0 +1,40 @@
+services:
+  backend:
+    build: ./api-jo2024
+    container_name: api-jo2024
+    env_file:
+        ./api-jo2024/.env.docker
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    build: ./ui-jo2024
+    container_name: ui-jo2024
+    ports: 
+      - "3000:3000"
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:18-alpine
+    container_name: pgSQL
+    env_file:
+        ./.env.pgsql
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:8-alpine
+    container_name: redis
+    command: redis-server --requirepass redispassword
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
