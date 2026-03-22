@@ -23,7 +23,7 @@ services:
     build:
       context: ./ui-jo2024
       args:
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
+        NEXT_PUBLIC_API_BASE_URL: https://jo2024.marcelyn.fr/api
     container_name: ui-jo2024
     environment:
       API_BASE_URL: http://backend:8000/api
