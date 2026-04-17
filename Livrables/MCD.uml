@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>DATABASE</ID>
+  <OriginalElement>51a12971-913e-4d9b-8f42-34dddeb66064.SCHEMA:jo2024.public</OriginalElement>
+  <nodes>
+    <node x="142.5" y="331.0">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.two_factor_codes</node>
+    <node x="399.0" y="167.0">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.sports</node>
+    <node x="907.5" y="1611.0">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.cart_items</node>
+    <node x="532.5" y="355.0">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.password_reset_token</node>
+    <node x="222.5" y="1983.0">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.offer_translations</node>
+    <node x="782.5" y="1995.0">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.event_translations</node>
+    <node x="282.5" y="751.5">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.sport_places</node>
+    <node x="510.5" y="2031.5">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.offer_features</node>
+    <node x="142.5" y="1095.0">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.sport_translations</node>
+    <node x="395.0" y="975.0">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.events</node>
+    <node x="623.0" y="1479.0">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.tickets</node>
+    <node x="355.0" y="1527.5">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.databasechangelog</node>
+    <node x="3.0" y="-237.0">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.users</node>
+    <node x="782.5" y="1131.5">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.sport_phases</node>
+    <node x="895.5" y="643.0">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.transactions</node>
+    <node x="-132.0" y="367.0">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.databasechangeloglock</node>
+    <node x="595.0" y="679.0">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.offers</node>
+    <node x="946.5" y="343.0">51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.carts</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.event_translations" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.events" relationship="REFERENCES">
+      <point x="0.0" y="-81.0" />
+      <point x="887.0" y="1456.0" />
+      <point x="787.0" y="1456.0" />
+      <point x="787.0" y="1416.0" />
+      <point x="507.0" y="1416.0" />
+      <point x="0.0" y="201.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.cart_items" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.events" relationship="REFERENCES">
+      <point x="-79.66666666666666" y="-105.0" />
+      <point x="947.3333333333333" y="1456.0" />
+      <point x="787.0" y="1456.0" />
+      <point x="787.0" y="1416.0" />
+      <point x="507.0" y="1416.0" />
+      <point x="0.0" y="201.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.events" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.sports" relationship="REFERENCES">
+      <point x="0.0" y="-201.0" />
+      <point x="0.0" y="69.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.tickets" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.events" relationship="REFERENCES">
+      <point x="31.0" y="-237.0" />
+      <point x="778.0" y="1456.0" />
+      <point x="787.0" y="1456.0" />
+      <point x="787.0" y="1416.0" />
+      <point x="507.0" y="1416.0" />
+      <point x="0.0" y="201.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.offer_translations" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.offers" relationship="REFERENCES">
+      <point x="0.0" y="-93.0" />
+      <point x="327.0" y="1456.0" />
+      <point x="607.0" y="1456.0" />
+      <point x="607.0" y="1396.0" />
+      <point x="651.0" y="1396.0" />
+      <point x="-56.0" y="117.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.transactions" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.users" relationship="REFERENCES">
+      <point x="-65.75" y="-153.0" />
+      <point x="961.25" y="616.0" />
+      <point x="927.0" y="616.0" />
+      <point x="927.0" y="156.0" />
+      <point x="127.0" y="156.0" />
+      <point x="0.0" y="153.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.password_reset_token" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.users" relationship="REFERENCES">
+      <point x="0.0" y="-81.0" />
+      <point x="647.0" y="156.0" />
+      <point x="127.0" y="156.0" />
+      <point x="0.0" y="153.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.sport_places" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.sports" relationship="REFERENCES">
+      <point x="0.0" y="-44.5" />
+      <point x="367.0" y="656.0" />
+      <point x="507.0" y="656.0" />
+      <point x="0.0" y="69.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.cart_items" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.carts" relationship="REFERENCES">
+      <point x="79.66666666666666" y="-105.0" />
+      <point x="1106.6666666666667" y="1576.0" />
+      <point x="1187.0" y="1576.0" />
+      <point x="1187.0" y="616.0" />
+      <point x="1087.0" y="616.0" />
+      <point x="1087.0" y="556.0" />
+      <point x="1047.0" y="556.0" />
+      <point x="0.0" y="93.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.sport_translations" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.sports" relationship="REFERENCES">
+      <point x="0.0" y="-81.0" />
+      <point x="247.0" y="656.0" />
+      <point x="507.0" y="656.0" />
+      <point x="0.0" y="69.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.offer_features" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.offers" relationship="REFERENCES">
+      <point x="0.0" y="-44.5" />
+      <point x="607.0" y="1396.0" />
+      <point x="651.0" y="1396.0" />
+      <point x="-56.0" y="117.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.sport_phases" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.sports" relationship="REFERENCES">
+      <point x="0.0" y="-44.5" />
+      <point x="867.0" y="656.0" />
+      <point x="507.0" y="656.0" />
+      <point x="0.0" y="69.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.cart_items" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.offers" relationship="REFERENCES">
+      <point x="0.0" y="-105.0" />
+      <point x="1027.0" y="1436.0" />
+      <point x="763.0" y="1436.0" />
+      <point x="56.0" y="117.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.tickets" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.transactions" relationship="REFERENCES">
+      <point x="93.0" y="-237.0" />
+      <point x="840.0" y="1236.0" />
+      <point x="1027.0" y="1236.0" />
+      <point x="0.0" y="153.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.tickets" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.users" relationship="REFERENCES">
+      <point x="-93.0" y="-237.0" />
+      <point x="654.0" y="1436.0" />
+      <point x="127.0" y="1436.0" />
+      <point x="0.0" y="153.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.two_factor_codes" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.users" relationship="REFERENCES">
+      <point x="0.0" y="-105.0" />
+      <point x="247.0" y="156.0" />
+      <point x="127.0" y="156.0" />
+      <point x="0.0" y="153.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.transactions" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.carts" relationship="REFERENCES">
+      <point x="65.75" y="-153.0" />
+      <point x="1092.75" y="616.0" />
+      <point x="1087.0" y="616.0" />
+      <point x="1087.0" y="556.0" />
+      <point x="1047.0" y="556.0" />
+      <point x="0.0" y="93.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.carts" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.users" relationship="REFERENCES">
+      <point x="0.0" y="-93.0" />
+      <point x="1047.0" y="156.0" />
+      <point x="127.0" y="156.0" />
+      <point x="0.0" y="153.0" />
+    </edge>
+    <edge source="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.tickets" target="51a12971-913e-4d9b-8f42-34dddeb66064.TABLE:jo2024.public.offers" relationship="REFERENCES">
+      <point x="-31.0" y="-237.0" />
+      <point x="716.0" y="1456.0" />
+      <point x="607.0" y="1456.0" />
+      <point x="607.0" y="1396.0" />
+      <point x="651.0" y="1396.0" />
+      <point x="-56.0" y="117.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Compact" zoom="0.3854080791426216" showDependencies="false" x="1298.1117647058823" y="966.0" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Columns</Category>
+    <Category>Comments</Category>
+    <Category>Key columns</Category>
+    <Category>Virtual foreign keys</Category>
+  </Categories>
+</Diagram>
+
