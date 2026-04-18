@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HmacResetTokenStore.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.service</a> &gt; <span class="el_source">HmacResetTokenStore.java</span></div><h1>HmacResetTokenStore.java</h1><pre class="source lang-java linenums">package dev.jos.back.service;
+
+import dev.jos.back.entities.PasswordResetToken;
+import dev.jos.back.entities.User;
+import dev.jos.back.repository.PasswordResetTokenRepository;
+import dev.jos.back.util.enums.TokenValidationResult;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.util.HexFormat;
+import java.util.Optional;
+
+<span class="fc" id="L19">@Slf4j</span>
+@Service
+public class HmacResetTokenStore implements ResetTokenStore {
+
+    private final PasswordResetTokenRepository repository;
+    private final SecretKeySpec signingKey;
+
+    public HmacResetTokenStore(PasswordResetTokenRepository repository,
+<span class="fc" id="L27">                                @Value(&quot;${app.reset-token.secret}&quot;) String secret) {</span>
+<span class="fc" id="L28">        this.repository = repository;</span>
+<span class="fc" id="L29">        this.signingKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), &quot;HmacSHA256&quot;);</span>
+<span class="fc" id="L30">    }</span>
+
+    @Override
+    @Transactional
+    public void store(User user, String plainToken, LocalDateTime expiry) {
+<span class="fc" id="L35">        repository.save(new PasswordResetToken(user, hmac(plainToken), expiry));</span>
+<span class="fc" id="L36">    }</span>
+
+    @Override
+    @Transactional(readOnly = true)
+    public TokenValidationResult validate(String plainToken) {
+<span class="fc" id="L41">        Optional&lt;PasswordResetToken&gt; opt = repository.findByHashedToken(hmac(plainToken));</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (opt.isEmpty()) return TokenValidationResult.NOT_FOUND;</span>
+<span class="fc" id="L43">        PasswordResetToken token = opt.get();</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if (token.isUsed()) return TokenValidationResult.NOT_FOUND;</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (token.getExpiry().isBefore(LocalDateTime.now())) return TokenValidationResult.EXPIRED;</span>
+<span class="fc" id="L46">        return TokenValidationResult.VALID;</span>
+    }
+
+    @Override
+    @Transactional
+    public void consume(String plainToken) {
+<span class="fc" id="L52">        repository.findByHashedToken(hmac(plainToken)).ifPresent(t -&gt; {</span>
+<span class="fc" id="L53">            t.setUsed(true);</span>
+<span class="fc" id="L54">            repository.save(t);</span>
+<span class="fc" id="L55">        });</span>
+<span class="fc" id="L56">    }</span>
+
+    @Override
+    @Transactional
+    public void purgeExpired() {
+<span class="fc" id="L61">        repository.deleteExpired(LocalDateTime.now());</span>
+<span class="fc" id="L62">    }</span>
+
+    private String hmac(String token) {
+        try {
+<span class="fc" id="L66">            Mac mac = Mac.getInstance(&quot;HmacSHA256&quot;);</span>
+<span class="fc" id="L67">            mac.init(signingKey);</span>
+<span class="fc" id="L68">            byte[] raw = mac.doFinal(token.getBytes(StandardCharsets.UTF_8));</span>
+<span class="fc" id="L69">            return HexFormat.of().formatHex(raw);</span>
+<span class="nc" id="L70">        } catch (Exception e) {</span>
+<span class="nc" id="L71">            throw new IllegalStateException(&quot;HMAC computation failed&quot;, e);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

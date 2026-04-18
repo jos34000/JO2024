@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TwoFactorController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.controller</a> &gt; <span class="el_source">TwoFactorController.java</span></div><h1>TwoFactorController.java</h1><pre class="source lang-java linenums">package dev.jos.back.controller;
+
+import dev.jos.back.dto.twofactor.ToggleTwoFactorRequestDTO;
+import dev.jos.back.dto.twofactor.VerifyCodeRequestDTO;
+import dev.jos.back.exceptions.twofactor.TwoFactorCodeNotFoundException;
+import dev.jos.back.exceptions.twofactor.TwoFactorMaxAttemptsException;
+import dev.jos.back.exceptions.user.UserNotFoundException;
+import dev.jos.back.service.TwoFactorService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+/**
+ * Contrôleur REST pour la gestion de l'authentification à deux facteurs (2FA).
+ * Fournit des endpoints pour envoyer et vérifier des codes OTP, ainsi que pour
+ * activer ou désactiver le 2FA sur le compte d'un utilisateur.
+ *
+ * @see TwoFactorService
+ */
+@RestController
+@RequestMapping(&quot;/api/2fa&quot;)
+@RequiredArgsConstructor
+public class TwoFactorController {
+
+    private final TwoFactorService twoFactorService;
+
+    /**
+     * Envoie un code OTP à l'adresse email de l'utilisateur authentifié.
+     *
+     * @param auth l'objet d'authentification Spring Security de l'utilisateur courant
+     * @return 204 No Content si l'email a bien été envoyé
+     * @throws UserNotFoundException si l'utilisateur n'existe pas en base
+     */
+    @PostMapping(&quot;/send&quot;)
+    public ResponseEntity&lt;Void&gt; sendCode(Authentication auth) {
+<span class="nc" id="L38">        twoFactorService.sendCode(auth.getName());</span>
+<span class="nc" id="L39">        return ResponseEntity.noContent().build();</span>
+    }
+
+    /**
+     * Vérifie le code OTP soumis par l'utilisateur.
+     *
+     * @param request le corps de la requête contenant le code OTP à vérifier
+     * @return 204 No Content si le code est valide
+     * @throws TwoFactorCodeNotFoundException si aucun code valide n'existe pour cet utilisateur
+     * @throws TwoFactorMaxAttemptsException  si le nombre maximum de tentatives est atteint
+     */
+    @PostMapping(&quot;/verify&quot;)
+    public ResponseEntity&lt;Void&gt; verifyCode(
+            @RequestBody @Valid VerifyCodeRequestDTO request) {
+<span class="nc" id="L53">        twoFactorService.verifyCode(request.email(), request.code());</span>
+<span class="nc" id="L54">        return ResponseEntity.noContent().build();</span>
+    }
+
+    /**
+     * Active ou désactive le 2FA pour l'utilisateur authentifié.
+     *
+     * @param auth    l'objet d'authentification Spring Security de l'utilisateur courant
+     * @param request le corps de la requête indiquant l'état souhaité du 2FA
+     * @return 204 No Content si la mise à jour a bien été effectuée
+     * @throws UserNotFoundException si l'utilisateur n'existe pas en base
+     */
+    @PatchMapping(&quot;/toggle&quot;)
+    public ResponseEntity&lt;Void&gt; toggle(Authentication auth,
+                                       @RequestBody @Valid ToggleTwoFactorRequestDTO request) {
+<span class="nc" id="L68">        twoFactorService.toggle(auth.getName(), request.enabled());</span>
+<span class="nc" id="L69">        return ResponseEntity.noContent().build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

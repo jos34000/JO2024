@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ScanResponseDTO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.dto.ticket</a> &gt; <span class="el_source">ScanResponseDTO.java</span></div><h1>ScanResponseDTO.java</h1><pre class="source lang-java linenums">package dev.jos.back.dto.ticket;
+
+import dev.jos.back.dto.cart.CartEventSummaryDTO;
+import dev.jos.back.dto.cart.CartOfferSummaryDTO;
+import lombok.Builder;
+
+import java.time.LocalDateTime;
+
+/**
+ * Résultat d'un scan de billet retourné au staff.
+ *
+ * @param outcome         résultat du scan : {@code SUCCESS} ou {@code ALREADY_USED}
+ * @param barcode         code-barre lisible du billet (JO2024-XXXXXXXX)
+ * @param status          état du billet : {@code VALID}, {@code USED}, {@code EXPIRED} ou {@code CANCELLED}
+ * @param holderFirstName prénom du porteur du billet
+ * @param holderLastName  nom du porteur du billet
+ * @param holderEmail     email du porteur du billet
+ * @param scannedAt       date de scan (null si outcome=SUCCESS et premier scan)
+ * @param scannedBy       email de l'agent ayant scanné (null si premier scan)
+ * @param price           prix unitaire du billet
+ * @param expiryAt        date d'expiration du billet
+ * @param createdAt       date de création du billet
+ * @param event           résumé de l'événement associé
+ * @param offer           résumé de l'offre associée
+ */
+@Builder
+<span class="fc" id="L27">public record ScanResponseDTO(</span>
+        String outcome,
+        String barcode,
+        String status,
+        String holderFirstName,
+        String holderLastName,
+        String holderEmail,
+        LocalDateTime scannedAt,
+        String scannedBy,
+        Double price,
+        LocalDateTime expiryAt,
+        LocalDateTime createdAt,
+        CartEventSummaryDTO event,
+        CartOfferSummaryDTO offer
+) {}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

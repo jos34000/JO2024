@@ -6,27 +6,27 @@ Application full-stack de gestion et de billetterie pour les Jeux Olympiques Par
 
 ## Documentation
 
-| Document | Description |
-|---|---|
-| [Guide utilisateur](doc/Guide/USER-GUIDE.md) | Parcours complets : utilisateur, staff, administrateur |
-| [Améliorations v2](doc/Enhancements/améliorations.md) | Roadmap et évolutions prévues |
-| [MCD](doc/MCD/MCD.png) | Modèle conceptuel de données |
-| [Architecture](doc/graphs/Architecture/Architecture%20JO.png) | Diagramme d'architecture de l'application |
-| [Diagramme de séquence — réservation](doc/graphs/Diagrammes%20séquences/diagramme-séquence-réservation.png) | Flux de réservation d'un billet |
-| [Plan de test fonctionnel](doc/Plan%20de%20test%20fonctionnel.csv) | Cas de test fonctionnels |
-| [Analyse des risques](doc/Analyse%20des%20risques.csv) | Identification et évaluation des risques |
-| [Process & Documentation](doc/Process%20&%20Documentation.pdf) | Documentation de processus |
+| Document                                                                                                    | Description                                            |
+| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| [Guide utilisateur](doc/Guide/USER-GUIDE.md)                                                                | Parcours complets : utilisateur, staff, administrateur |
+| [Améliorations](doc/Enhancements/améliorations.md)                                                          | Roadmap et évolutions prévues                          |
+| [MCD](doc/MCD/MCD.png)                                                                                      | Modèle conceptuel de données                           |
+| [Architecture](doc/graphs/Architecture/Architecture%20JO.png)                                               | Diagramme d'architecture de l'application              |
+| [Diagramme de séquence — réservation](doc/graphs/Diagrammes%20séquences/diagramme-séquence-réservation.png) | Flux de réservation d'un billet                        |
+| [Plan de test fonctionnel](doc/Plan%20de%20test%20fonctionnel.csv)                                          | Cas de test fonctionnels                               |
+| [Analyse des risques](doc/Analyse%20des%20risques.csv)                                                      | Identification et évaluation des risques               |
+| [Process & Documentation](doc/Process%20&%20Documentation.pdf)                                              | Documentation de processus                             |
 
 ---
 
 ## Stack technique
 
-| Couche | Technologies |
-|---|---|
-| API | Java 21 · Spring Boot 4.0 · Spring Security · JWT · Liquibase |
-| Base de données | PostgreSQL 18 |
-| Frontend | Next.js 16 · TypeScript · Tailwind CSS · Radix UI · Zustand |
-| Infrastructure | Docker · Docker Compose |
+| Couche          | Technologies                                                  |
+| --------------- | ------------------------------------------------------------- |
+| API             | Java 21 · Spring Boot 4.0 · Spring Security · JWT · Liquibase |
+| Base de données | PostgreSQL 18                                                 |
+| Frontend        | Next.js 16 · TypeScript · Tailwind CSS · Radix UI · Zustand   |
+| Infrastructure  | Docker · Docker Compose                                       |
 
 ---
 
@@ -56,20 +56,20 @@ cp .env.example .env
 cp api-jo2024/.env.example api-jo2024/.env.prod
 ```
 
-| Variable (`.env`) | Description |
-|---|---|
-| `POSTGRES_DB` | Nom de la base de données |
-| `POSTGRES_USER` | Utilisateur PostgreSQL |
-| `POSTGRES_PASSWORD` | Mot de passe PostgreSQL |
+| Variable (`.env`)   | Description               |
+| ------------------- | ------------------------- |
+| `POSTGRES_DB`       | Nom de la base de données |
+| `POSTGRES_USER`     | Utilisateur PostgreSQL    |
+| `POSTGRES_PASSWORD` | Mot de passe PostgreSQL   |
 
-| Variable (`api-jo2024/.env.prod`) | Description |
-|---|---|
-| `DATABASE_URL` | URL JDBC de connexion à PostgreSQL |
-| `DB_USER` / `DB_PASSWORD` | Identifiants de la base |
-| `JWT_ACCESS_SECRET` | Clé secrète JWT (Base64) pour les access tokens |
-| `JWT_REFRESH_SECRET` | Clé secrète JWT (Base64) pour les refresh tokens |
-| `ALLOWED_ORIGINS` | Origines autorisées par CORS (ex: `http://localhost:3000`) |
-| `SPRING_PROFILES_ACTIVE` | Profil Spring actif (ex: `prod`) |
+| Variable (`api-jo2024/.env.prod`) | Description                                                |
+| --------------------------------- | ---------------------------------------------------------- |
+| `DATABASE_URL`                    | URL JDBC de connexion à PostgreSQL                         |
+| `DB_USER` / `DB_PASSWORD`         | Identifiants de la base                                    |
+| `JWT_ACCESS_SECRET`               | Clé secrète JWT (Base64) pour les access tokens            |
+| `JWT_REFRESH_SECRET`              | Clé secrète JWT (Base64) pour les refresh tokens           |
+| `ALLOWED_ORIGINS`                 | Origines autorisées par CORS (ex: `http://localhost:3000`) |
+| `SPRING_PROFILES_ACTIVE`          | Profil Spring actif (ex: `prod`)                           |
 
 **2. Lancer**
 
@@ -77,10 +77,10 @@ cp api-jo2024/.env.example api-jo2024/.env.prod
 docker compose up --build
 ```
 
-| Service | URL |
-|---|---|
-| Frontend | http://localhost:3000 |
-| API | http://localhost:8000 |
+| Service    | URL                                   |
+| ---------- | ------------------------------------- |
+| Frontend   | http://localhost:3000                 |
+| API        | http://localhost:8000                 |
 | Swagger UI | http://localhost:8000/swagger-ui.html |
 
 ---

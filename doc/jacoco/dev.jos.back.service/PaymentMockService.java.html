@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PaymentMockService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.service</a> &gt; <span class="el_source">PaymentMockService.java</span></div><h1>PaymentMockService.java</h1><pre class="source lang-java linenums">package dev.jos.back.service;
+
+import org.springframework.stereotype.Service;
+
+@Service
+<span class="fc" id="L6">public class PaymentMockService {</span>
+
+    public PaymentResult processPayment(String cardNumber) {
+<span class="fc" id="L9">        String normalized = cardNumber.replaceAll(&quot;\\s&quot;, &quot;&quot;);</span>
+
+<span class="fc bfc" id="L11" title="All 4 branches covered.">        return switch (normalized) {</span>
+<span class="fc" id="L12">            case &quot;4000000000000002&quot; -&gt; PaymentResult.failure(&quot;Carte déclinée&quot;);</span>
+<span class="fc" id="L13">            case &quot;4000000000009995&quot; -&gt; PaymentResult.failure(&quot;Fonds insuffisants&quot;);</span>
+<span class="fc" id="L14">            case &quot;4000000000000069&quot; -&gt; PaymentResult.failure(&quot;Carte expirée&quot;);</span>
+<span class="fc" id="L15">            default -&gt; PaymentResult.success();</span>
+        };
+    }
+
+<span class="fc" id="L19">    public record PaymentResult(boolean succeeded, String declineReason) {</span>
+        public static PaymentResult success() {
+<span class="fc" id="L21">            return new PaymentResult(true, null);</span>
+        }
+
+        public static PaymentResult failure(String reason) {
+<span class="fc" id="L25">            return new PaymentResult(false, reason);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

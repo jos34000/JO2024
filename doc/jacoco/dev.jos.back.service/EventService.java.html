@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.service</a> &gt; <span class="el_source">EventService.java</span></div><h1>EventService.java</h1><pre class="source lang-java linenums">package dev.jos.back.service;
+
+import dev.jos.back.dto.event.CreateEventDTO;
+import dev.jos.back.dto.event.EventResponseDTO;
+import dev.jos.back.dto.event.UpdateEventDTO;
+import dev.jos.back.entities.Event;
+import dev.jos.back.entities.EventTranslation;
+import dev.jos.back.entities.Sport;
+import dev.jos.back.exceptions.event.EventAlreadyExistsException;
+import dev.jos.back.exceptions.event.EventNotFoundException;
+import dev.jos.back.exceptions.sport.SportNotFoundException;
+import dev.jos.back.mapper.EventMapper;
+import dev.jos.back.repository.EventRepository;
+import dev.jos.back.repository.EventTranslationRepository;
+import dev.jos.back.repository.SportRepository;
+import dev.jos.back.util.LocaleResolver;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+<span class="fc" id="L25">@Slf4j</span>
+@Service
+@RequiredArgsConstructor
+public class EventService {
+
+    private final EventRepository eventRepository;
+    private final EventMapper eventMapper;
+    private final SportRepository sportRepository;
+    private final EventTranslationRepository eventTranslationRepository;
+
+    private Map&lt;Long, EventTranslation&gt; getTranslationMap(List&lt;Event&gt; events, String locale) {
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (&quot;fr&quot;.equals(locale)) return Collections.emptyMap();</span>
+<span class="fc" id="L37">        List&lt;Long&gt; ids = events.stream().map(Event::getId).toList();</span>
+<span class="fc" id="L38">        return eventTranslationRepository.findByEventIdsAndLocale(ids, locale).stream()</span>
+<span class="fc" id="L39">                .collect(Collectors.toMap(t -&gt; t.getEvent().getId(), t -&gt; t));</span>
+    }
+
+    private EventResponseDTO mapWithLocale(Event event, Map&lt;Long, EventTranslation&gt; translationMap) {
+<span class="fc" id="L43">        EventTranslation t = translationMap.get(event.getId());</span>
+<span class="pc bpc" id="L44" title="2 of 4 branches missed.">        String name = (t != null &amp;&amp; t.getName() != null) ? t.getName() : event.getName();</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        String description = t != null ? t.getDescription() : event.getDescription();</span>
+<span class="fc" id="L46">        return eventMapper.toResponseDTO(event, name, description);</span>
+    }
+
+    @Transactional
+    public List&lt;EventResponseDTO&gt; createEventsBulk(List&lt;CreateEventDTO&gt; eventsDto) {
+<span class="fc" id="L51">        Map&lt;String, Sport&gt; sportsByName = sportRepository.findAll()</span>
+<span class="fc" id="L52">                .stream()</span>
+<span class="fc" id="L53">                .collect(Collectors.toMap(Sport::getName, s -&gt; s));</span>
+
+<span class="fc" id="L55">        List&lt;Event&gt; eventsToSave = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L57">        eventsDto.forEach(dto -&gt; {</span>
+<span class="fc" id="L58">            Optional&lt;Event&gt; existing = eventRepository.findByNameAndEventDate(</span>
+<span class="fc" id="L59">                    dto.name(),</span>
+<span class="fc" id="L60">                    dto.eventDate()</span>
+            );
+<span class="fc bfc" id="L62" title="All 2 branches covered.">            if (existing.isPresent()) {</span>
+<span class="fc" id="L63">                log.warn(&quot;Événement ignoré - déjà existant : {} le {}&quot;, dto.name(), dto.eventDate());</span>
+<span class="fc" id="L64">                return;</span>
+            }
+
+<span class="fc" id="L67">            Sport sport = Optional.ofNullable(sportsByName.get(dto.sport()))</span>
+<span class="fc" id="L68">                    .orElseThrow(() -&gt; new SportNotFoundException(&quot;Sport non trouvé : &quot; + dto.sport()));</span>
+
+<span class="fc" id="L70">            Event event = eventMapper.toEntity(dto);</span>
+<span class="fc" id="L71">            event.setSport(sport);</span>
+<span class="fc" id="L72">            eventsToSave.add(event);</span>
+<span class="fc" id="L73">        });</span>
+
+<span class="fc" id="L75">        List&lt;Event&gt; savedEvents = eventRepository.saveAll(eventsToSave);</span>
+<span class="fc" id="L76">        return savedEvents.stream()</span>
+<span class="fc" id="L77">                .map(eventMapper::toResponseDTO)</span>
+<span class="fc" id="L78">                .toList();</span>
+    }
+
+    @Transactional
+    public EventResponseDTO createEvent(CreateEventDTO dto) {
+<span class="fc" id="L83">        Optional&lt;Event&gt; existing = eventRepository.findByNameAndEventDate(</span>
+<span class="fc" id="L84">                dto.name(),</span>
+<span class="fc" id="L85">                dto.eventDate()</span>
+        );
+
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (existing.isPresent()) {</span>
+<span class="fc" id="L89">            throw new EventAlreadyExistsException(&quot;Cet événement existe déjà&quot;);</span>
+        }
+
+<span class="fc" id="L92">        Event event = new Event();</span>
+<span class="fc" id="L93">        event.setName(dto.name());</span>
+<span class="fc" id="L94">        event.setDescription(dto.description());</span>
+<span class="fc" id="L95">        event.setLocation(dto.location());</span>
+<span class="fc" id="L96">        event.setEventDate(dto.eventDate());</span>
+<span class="fc" id="L97">        event.setCapacity(dto.capacity());</span>
+<span class="fc" id="L98">        event.setAvailableSlots(</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">                dto.availableSlots() != null ? dto.availableSlots() : dto.capacity()</span>
+        );
+<span class="pc bpc" id="L101" title="3 of 4 branches missed.">        event.setIsActive(dto.isActive() == null || dto.isActive());</span>
+
+<span class="fc" id="L103">        Event saved = eventRepository.save(event);</span>
+<span class="fc" id="L104">        return eventMapper.toResponseDTO(saved);</span>
+    }
+
+    public List&lt;EventResponseDTO&gt; getAllEvents(String locale) {
+<span class="fc" id="L108">        String lang = LocaleResolver.resolve(locale);</span>
+<span class="fc" id="L109">        List&lt;Event&gt; events = eventRepository.findAll();</span>
+<span class="fc" id="L110">        Map&lt;Long, EventTranslation&gt; translations = getTranslationMap(events, lang);</span>
+<span class="fc" id="L111">        return events.stream().map(e -&gt; mapWithLocale(e, translations)).toList();</span>
+    }
+
+    public List&lt;EventResponseDTO&gt; getActiveEvents(String locale) {
+<span class="fc" id="L115">        String lang = LocaleResolver.resolve(locale);</span>
+<span class="fc" id="L116">        List&lt;Event&gt; events = eventRepository.findByIsActiveTrue();</span>
+<span class="fc" id="L117">        Map&lt;Long, EventTranslation&gt; translations = getTranslationMap(events, lang);</span>
+<span class="fc" id="L118">        return events.stream().map(e -&gt; mapWithLocale(e, translations)).toList();</span>
+    }
+
+    public List&lt;EventResponseDTO&gt; getAvailableEvents(String locale) {
+<span class="fc" id="L122">        String lang = LocaleResolver.resolve(locale);</span>
+<span class="fc" id="L123">        List&lt;Event&gt; events = eventRepository.findAvailableEvents();</span>
+<span class="fc" id="L124">        Map&lt;Long, EventTranslation&gt; translations = getTranslationMap(events, lang);</span>
+<span class="fc" id="L125">        return events.stream().map(e -&gt; mapWithLocale(e, translations)).toList();</span>
+    }
+
+    public EventResponseDTO getEventById(Long id, String locale) {
+<span class="fc" id="L129">        String lang = LocaleResolver.resolve(locale);</span>
+<span class="fc" id="L130">        Event event = eventRepository.findById(id)</span>
+<span class="fc" id="L131">                .orElseThrow(() -&gt; new EventNotFoundException(&quot;Événement non trouvé&quot;));</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        EventTranslation t = &quot;fr&quot;.equals(lang) ? null :</span>
+<span class="fc" id="L133">                eventTranslationRepository.findByEvent_IdAndLocale(event.getId(), lang).orElse(null);</span>
+<span class="pc bpc" id="L134" title="1 of 4 branches missed.">        String name = (t != null &amp;&amp; t.getName() != null) ? t.getName() : event.getName();</span>
+<span class="fc bfc" id="L135" title="All 2 branches covered.">        String description = t != null ? t.getDescription() : event.getDescription();</span>
+<span class="fc" id="L136">        return eventMapper.toResponseDTO(event, name, description);</span>
+    }
+
+    public List&lt;EventResponseDTO&gt; getAll(String locale) {
+<span class="nc" id="L140">        return getAllEvents(locale);</span>
+    }
+
+    public List&lt;EventResponseDTO&gt; getEventsBySport(String sport, String locale) {
+<span class="fc" id="L144">        String lang = LocaleResolver.resolve(locale);</span>
+<span class="fc" id="L145">        List&lt;Event&gt; events = eventRepository.findBySportName(sport);</span>
+<span class="fc" id="L146">        Map&lt;Long, EventTranslation&gt; translations = getTranslationMap(events, lang);</span>
+<span class="fc" id="L147">        return events.stream().map(e -&gt; mapWithLocale(e, translations)).toList();</span>
+    }
+
+    @Transactional
+    public EventResponseDTO updateEvent(Long id, UpdateEventDTO dto) {
+<span class="fc" id="L152">        Event event = eventRepository.findById(id)</span>
+<span class="fc" id="L153">                .orElseThrow(() -&gt; new EventNotFoundException(&quot;Événement non trouvé&quot;));</span>
+<span class="fc bfc" id="L154" title="All 2 branches covered.">        if (dto.name() != null) event.setName(dto.name());</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">        if (dto.description() != null) event.setDescription(dto.description());</span>
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">        if (dto.icon() != null) event.setIcon(dto.icon());</span>
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        if (dto.category() != null) event.setCategory(dto.category());</span>
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">        if (dto.phase() != null) event.setPhase(dto.phase());</span>
+<span class="pc bpc" id="L159" title="1 of 2 branches missed.">        if (dto.location() != null) event.setLocation(dto.location());</span>
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">        if (dto.city() != null) event.setCity(dto.city());</span>
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">        if (dto.eventDate() != null) event.setEventDate(dto.eventDate());</span>
+<span class="pc bpc" id="L162" title="1 of 2 branches missed.">        if (dto.capacity() != null) event.setCapacity(dto.capacity());</span>
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">        if (dto.availableSlots() != null) event.setAvailableSlots(dto.availableSlots());</span>
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        if (dto.isActive() != null) event.setIsActive(dto.isActive());</span>
+<span class="fc bfc" id="L165" title="All 2 branches covered.">        if (dto.sport() != null) {</span>
+<span class="fc" id="L166">            Sport sport = sportRepository.findByName(dto.sport())</span>
+<span class="fc" id="L167">                    .orElseThrow(() -&gt; new SportNotFoundException(&quot;Sport non trouvé : &quot; + dto.sport()));</span>
+<span class="fc" id="L168">            event.setSport(sport);</span>
+        }
+<span class="fc" id="L170">        return eventMapper.toResponseDTO(eventRepository.saveAndFlush(event));</span>
+    }
+
+    @Transactional
+    public void deleteEvent(Long id) {
+<span class="fc bfc" id="L175" title="All 2 branches covered.">        if (!eventRepository.existsById(id)) {</span>
+<span class="fc" id="L176">            throw new EventNotFoundException(&quot;Événement non trouvé&quot;);</span>
+        }
+<span class="fc" id="L178">        eventRepository.deleteById(id);</span>
+<span class="fc" id="L179">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

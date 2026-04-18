@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TicketGroupResponseDTO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.dto.payment</a> &gt; <span class="el_source">TicketGroupResponseDTO.java</span></div><h1>TicketGroupResponseDTO.java</h1><pre class="source lang-java linenums">package dev.jos.back.dto.payment;
+
+import dev.jos.back.dto.cart.CartEventSummaryDTO;
+import dev.jos.back.dto.cart.CartOfferSummaryDTO;
+import lombok.Builder;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * Représente un groupe de billets issus du même achat (même transaction, même épreuve, même offre).
+ * &lt;p&gt;
+ * Une offre Duo ou Famille génère plusieurs billets individuels ; ce DTO les réunit en une entrée
+ * unique pour l'affichage dans l'historique de l'utilisateur.
+ * &lt;/p&gt;
+ *
+ * @param transactionId    identifiant de la transaction parente
+ * @param paymentReference référence de paiement lisible
+ * @param purchasedAt      date d'achat
+ * @param event            résumé de l'épreuve
+ * @param offer            résumé de l'offre (Solo, Duo, Famille…)
+ * @param totalSeats       nombre total de places physiques dans ce groupe
+ * @param totalPrice       prix total du groupe
+ * @param groupStatus      statut agrégé : {@code VALID}, {@code USED} ou {@code CANCELLED}
+ * @param barcodes         codes-barres des billets individuels (un par place)
+ */
+@Builder
+<span class="fc" id="L28">public record TicketGroupResponseDTO(</span>
+        Long transactionId,
+        String paymentReference,
+        LocalDateTime purchasedAt,
+        CartEventSummaryDTO event,
+        CartOfferSummaryDTO offer,
+        int totalSeats,
+        double totalPrice,
+        String groupStatus,
+        List&lt;String&gt; barcodes
+) {}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

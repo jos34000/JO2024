@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactionResponseDTO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.dto.payment</a> &gt; <span class="el_source">TransactionResponseDTO.java</span></div><h1>TransactionResponseDTO.java</h1><pre class="source lang-java linenums">package dev.jos.back.dto.payment;
+
+import lombok.Builder;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * DTO représentant le résultat d'une transaction de paiement.
+ *
+ * @param id               l'identifiant technique de la transaction
+ * @param transactionKey   la clé UUID unique de la transaction
+ * @param status           le statut de la transaction (COMPLETED ou FAILED)
+ * @param amount           le montant total payé
+ * @param paymentReference la référence de paiement lisible (ex: REF-A1B2C3D4)
+ * @param payedDate        la date et heure du paiement (null si FAILED)
+ * @param tickets          la liste des billets générés (vide si FAILED)
+ */
+@Builder
+<span class="fc" id="L21">public record TransactionResponseDTO(</span>
+        Long id,
+        String transactionKey,
+        String status,
+        BigDecimal amount,
+        String paymentReference,
+        LocalDateTime payedDate,
+        List&lt;TicketResponseDTO&gt; tickets
+) {}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

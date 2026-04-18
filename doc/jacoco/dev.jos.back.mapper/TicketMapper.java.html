@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TicketMapper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.mapper</a> &gt; <span class="el_source">TicketMapper.java</span></div><h1>TicketMapper.java</h1><pre class="source lang-java linenums">package dev.jos.back.mapper;
+
+import dev.jos.back.dto.cart.CartEventSummaryDTO;
+import dev.jos.back.dto.cart.CartOfferSummaryDTO;
+import dev.jos.back.dto.payment.TicketGroupResponseDTO;
+import dev.jos.back.dto.payment.TicketResponseDTO;
+import dev.jos.back.dto.payment.TransactionResponseDTO;
+import dev.jos.back.dto.ticket.ScanResponseDTO;
+import dev.jos.back.entities.Ticket;
+import dev.jos.back.entities.Transaction;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+
+@Component
+<span class="fc" id="L16">public class TicketMapper {</span>
+
+    public TicketResponseDTO toTicketResponseDTO(Ticket t) {
+<span class="fc" id="L19">        return TicketResponseDTO.builder()</span>
+<span class="fc" id="L20">                .id(t.getId())</span>
+<span class="fc" id="L21">                .ticketKey(t.getTicketKey())</span>
+<span class="fc" id="L22">                .combinedKey(t.getCombinedKey())</span>
+<span class="fc" id="L23">                .barcode(t.getBarcode())</span>
+<span class="fc" id="L24">                .price(t.getPrice())</span>
+<span class="fc" id="L25">                .status(computeStatus(t))</span>
+<span class="fc" id="L26">                .createdAt(t.getCreatedAt())</span>
+<span class="fc" id="L27">                .event(toEventSummary(t))</span>
+<span class="fc" id="L28">                .offer(toOfferSummary(t))</span>
+<span class="fc" id="L29">                .build();</span>
+    }
+
+    public ScanResponseDTO toScanResponseDTO(Ticket t, String outcome) {
+<span class="fc" id="L33">        return ScanResponseDTO.builder()</span>
+<span class="fc" id="L34">                .outcome(outcome)</span>
+<span class="fc" id="L35">                .barcode(t.getBarcode())</span>
+<span class="fc" id="L36">                .status(computeStatus(t))</span>
+<span class="fc" id="L37">                .holderFirstName(t.getUser().getFirstName())</span>
+<span class="fc" id="L38">                .holderLastName(t.getUser().getLastName())</span>
+<span class="fc" id="L39">                .holderEmail(t.getUser().getEmail())</span>
+<span class="fc" id="L40">                .scannedAt(t.getScannedAt())</span>
+<span class="fc" id="L41">                .scannedBy(t.getScannedBy())</span>
+<span class="fc" id="L42">                .price(t.getPrice())</span>
+<span class="fc" id="L43">                .expiryAt(t.getExpiryAt())</span>
+<span class="fc" id="L44">                .createdAt(t.getCreatedAt())</span>
+<span class="fc" id="L45">                .event(toEventSummary(t))</span>
+<span class="fc" id="L46">                .offer(toOfferSummary(t))</span>
+<span class="fc" id="L47">                .build();</span>
+    }
+
+    public TicketGroupResponseDTO toTicketGroupResponseDTO(List&lt;Ticket&gt; tickets) {
+<span class="fc" id="L51">        Ticket first = tickets.getFirst();</span>
+<span class="fc" id="L52">        return TicketGroupResponseDTO.builder()</span>
+<span class="fc" id="L53">                .transactionId(first.getTransaction().getId())</span>
+<span class="fc" id="L54">                .paymentReference(first.getTransaction().getPaymentReference())</span>
+<span class="fc" id="L55">                .purchasedAt(first.getCreatedAt())</span>
+<span class="fc" id="L56">                .event(toEventSummary(first))</span>
+<span class="fc" id="L57">                .offer(toOfferSummary(first))</span>
+<span class="fc" id="L58">                .totalSeats(tickets.size())</span>
+<span class="fc" id="L59">                .totalPrice(tickets.stream().mapToDouble(Ticket::getPrice).sum())</span>
+<span class="fc" id="L60">                .groupStatus(computeGroupStatus(tickets))</span>
+<span class="fc" id="L61">                .barcodes(tickets.stream().map(Ticket::getBarcode).toList())</span>
+<span class="fc" id="L62">                .build();</span>
+    }
+
+    public TransactionResponseDTO toTransactionResponseDTO(Transaction transaction, List&lt;Ticket&gt; tickets) {
+<span class="fc" id="L66">        return TransactionResponseDTO.builder()</span>
+<span class="fc" id="L67">                .id(transaction.getId())</span>
+<span class="fc" id="L68">                .transactionKey(transaction.getTransactionKey())</span>
+<span class="fc" id="L69">                .status(transaction.getStatus().name())</span>
+<span class="fc" id="L70">                .amount(transaction.getAmount())</span>
+<span class="fc" id="L71">                .paymentReference(transaction.getPaymentReference())</span>
+<span class="fc" id="L72">                .payedDate(transaction.getPayedDate())</span>
+<span class="fc" id="L73">                .tickets(tickets.stream().map(this::toTicketResponseDTO).toList())</span>
+<span class="fc" id="L74">                .build();</span>
+    }
+
+    private String computeStatus(Ticket t) {
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        if (!Boolean.TRUE.equals(t.getIsValid())) return &quot;CANCELLED&quot;;</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (Boolean.TRUE.equals(t.getIsScanned())) return &quot;USED&quot;;</span>
+<span class="fc" id="L80">        return &quot;VALID&quot;;</span>
+    }
+
+    private String computeGroupStatus(List&lt;Ticket&gt; tickets) {
+<span class="fc bfc" id="L84" title="All 4 branches covered.">        if (tickets.stream().anyMatch(t -&gt; !Boolean.TRUE.equals(t.getIsValid()))) return &quot;CANCELLED&quot;;</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        if (tickets.stream().allMatch(t -&gt; Boolean.TRUE.equals(t.getIsScanned()))) return &quot;USED&quot;;</span>
+<span class="fc" id="L86">        return &quot;VALID&quot;;</span>
+    }
+
+    private CartEventSummaryDTO toEventSummary(Ticket t) {
+<span class="fc" id="L90">        return CartEventSummaryDTO.builder()</span>
+<span class="fc" id="L91">                .id(t.getEvent().getId())</span>
+<span class="fc" id="L92">                .name(t.getEvent().getName())</span>
+<span class="fc" id="L93">                .eventDate(t.getEvent().getEventDate())</span>
+<span class="fc" id="L94">                .location(t.getEvent().getLocation())</span>
+<span class="fc" id="L95">                .city(t.getEvent().getCity())</span>
+<span class="fc" id="L96">                .phase(t.getEvent().getPhase())</span>
+<span class="fc" id="L97">                .build();</span>
+    }
+
+    private CartOfferSummaryDTO toOfferSummary(Ticket t) {
+<span class="fc" id="L101">        return CartOfferSummaryDTO.builder()</span>
+<span class="fc" id="L102">                .id(t.getOffer().getId())</span>
+<span class="fc" id="L103">                .name(t.getOffer().getName())</span>
+<span class="fc" id="L104">                .numberOfTickets(t.getOffer().getNumberOfTickets())</span>
+<span class="fc" id="L105">                .price(t.getOffer().getPrice())</span>
+<span class="fc" id="L106">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

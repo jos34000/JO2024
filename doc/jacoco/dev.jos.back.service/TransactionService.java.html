@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransactionService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.service</a> &gt; <span class="el_source">TransactionService.java</span></div><h1>TransactionService.java</h1><pre class="source lang-java linenums">package dev.jos.back.service;
+
+import dev.jos.back.dto.payment.CheckoutRequestDTO;
+import dev.jos.back.dto.payment.TicketGroupResponseDTO;
+import dev.jos.back.dto.payment.TransactionResponseDTO;
+import dev.jos.back.mapper.TicketMapper;
+import dev.jos.back.entities.*;
+import dev.jos.back.exceptions.cart.CartNotFoundException;
+import dev.jos.back.exceptions.payment.CartAlreadyConvertedException;
+import dev.jos.back.exceptions.payment.CartEmptyException;
+import dev.jos.back.exceptions.payment.PaymentDeclinedException;
+import dev.jos.back.exceptions.payment.TransactionNotFoundException;
+import dev.jos.back.exceptions.user.UserNotFoundException;
+import dev.jos.back.repository.CartRepository;
+import dev.jos.back.repository.EventRepository;
+import dev.jos.back.repository.TicketRepository;
+import dev.jos.back.repository.TransactionRepository;
+import dev.jos.back.repository.UserRepository;
+import dev.jos.back.util.PaymentResult;
+import dev.jos.back.util.enums.CartStatus;
+import dev.jos.back.util.enums.TransactionStatus;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+
+<span class="fc" id="L36">@Slf4j</span>
+@Service
+@RequiredArgsConstructor
+public class TransactionService implements ICheckoutService {
+
+    private final UserRepository userRepository;
+    private final CartRepository cartRepository;
+    private final TransactionRepository transactionRepository;
+    private final TicketRepository ticketRepository;
+    private final EventRepository eventRepository;
+    private final PaymentGateway paymentGateway;
+    private final PdfTicketService pdfTicketService;
+    private final EmailService emailService;
+    private final TicketMapper ticketMapper;
+
+    @Transactional
+    public TransactionResponseDTO checkout(String email, CheckoutRequestDTO dto) {
+<span class="fc" id="L53">        User user = userRepository.findByEmail(email)</span>
+<span class="fc" id="L54">                .orElseThrow(() -&gt; new UserNotFoundException(&quot;Utilisateur introuvable&quot;));</span>
+
+<span class="fc" id="L56">        Cart cart = cartRepository.findByUserAndStatus(user, CartStatus.ACTIVE)</span>
+<span class="fc" id="L57">                .orElseThrow(() -&gt; new CartNotFoundException(&quot;Aucun panier actif&quot;));</span>
+
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (cart.expireIfNeeded()) {</span>
+<span class="fc" id="L60">            cartRepository.save(cart);</span>
+<span class="fc" id="L61">            throw new CartNotFoundException(&quot;Le panier a expiré&quot;);</span>
+        }
+
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (cart.getStatus() == CartStatus.CONVERTED) {</span>
+<span class="fc" id="L65">            throw new CartAlreadyConvertedException(&quot;Ce panier a déjà été payé&quot;);</span>
+        }
+
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (cart.getCartItems().isEmpty()) {</span>
+<span class="fc" id="L69">            throw new CartEmptyException(&quot;Le panier est vide&quot;);</span>
+        }
+
+<span class="fc" id="L72">        BigDecimal amount = cart.getCartItems().stream()</span>
+<span class="fc" id="L73">                .map(item -&gt; BigDecimal.valueOf(item.getUnitPrice() * item.getQuantity()))</span>
+<span class="fc" id="L74">                .reduce(BigDecimal.ZERO, BigDecimal::add);</span>
+
+<span class="fc" id="L76">        PaymentResult result = paymentGateway.processPayment(dto.cardNumber());</span>
+
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        if (!result.succeeded()) {</span>
+<span class="fc" id="L79">            throw new PaymentDeclinedException(result.declineReason());</span>
+        }
+
+<span class="fc" id="L82">        String transactionKey = UUID.randomUUID().toString();</span>
+<span class="fc" id="L83">        String paymentReference = &quot;REF-&quot; + UUID.randomUUID().toString().substring(0, 8).toUpperCase();</span>
+
+<span class="fc" id="L85">        Transaction transaction = new Transaction();</span>
+<span class="fc" id="L86">        transaction.setTransactionKey(transactionKey);</span>
+<span class="fc" id="L87">        transaction.setPaymentReference(paymentReference);</span>
+<span class="fc" id="L88">        transaction.setStatus(TransactionStatus.COMPLETED);</span>
+<span class="fc" id="L89">        transaction.setAmount(amount);</span>
+<span class="fc" id="L90">        transaction.setPaymentMethod(dto.paymentMethod());</span>
+<span class="fc" id="L91">        transaction.setPayedDate(LocalDateTime.now());</span>
+<span class="fc" id="L92">        transaction.setUser(user);</span>
+<span class="fc" id="L93">        transaction.setCart(cart);</span>
+<span class="fc" id="L94">        transactionRepository.save(transaction);</span>
+
+<span class="fc" id="L96">        List&lt;Ticket&gt; tickets = generateTickets(cart, transaction, user);</span>
+<span class="fc" id="L97">        ticketRepository.saveAll(tickets);</span>
+
+<span class="fc" id="L99">        Map&lt;Event, Long&gt; ticketsPerEvent = tickets.stream()</span>
+<span class="fc" id="L100">                .collect(Collectors.groupingBy(Ticket::getEvent, Collectors.counting()));</span>
+<span class="fc" id="L101">        ticketsPerEvent.forEach((event, count) -&gt; {</span>
+<span class="fc" id="L102">            event.setAvailableSlots(Math.max(0, event.getAvailableSlots() - count.intValue()));</span>
+<span class="fc" id="L103">            eventRepository.save(event);</span>
+<span class="fc" id="L104">        });</span>
+
+<span class="fc" id="L106">        cart.setStatus(CartStatus.CONVERTED);</span>
+<span class="fc" id="L107">        cartRepository.save(cart);</span>
+
+<span class="fc" id="L109">        TransactionResponseDTO responseDTO = ticketMapper.toTransactionResponseDTO(transaction, tickets);</span>
+
+        try {
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">            String userLocale = user.getLocale() != null ? user.getLocale() : &quot;fr&quot;;</span>
+<span class="fc" id="L113">            byte[] pdf = pdfTicketService.generate(responseDTO, userLocale);</span>
+<span class="fc" id="L114">            emailService.sendTicketsEmail(user.getEmail(), user.getFirstName(), responseDTO, pdf, userLocale);</span>
+<span class="nc" id="L115">        } catch (Exception e) {</span>
+<span class="nc" id="L116">            log.warn(&quot;Envoi email billets échoué pour transaction {} : {}&quot;, responseDTO.id(), e.getMessage());</span>
+<span class="fc" id="L117">        }</span>
+
+<span class="fc" id="L119">        return responseDTO;</span>
+    }
+
+    @Transactional(readOnly = true)
+    public TransactionResponseDTO getTransaction(String email, Long transactionId) {
+<span class="fc" id="L124">        Transaction transaction = transactionRepository.findByIdAndUser_Email(transactionId, email)</span>
+<span class="fc" id="L125">                .orElseThrow(() -&gt; new TransactionNotFoundException(&quot;Transaction introuvable&quot;));</span>
+
+<span class="fc" id="L127">        List&lt;Ticket&gt; tickets = new ArrayList&lt;&gt;(transaction.getTickets());</span>
+<span class="fc" id="L128">        return ticketMapper.toTransactionResponseDTO(transaction, tickets);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] getTicketsPdf(String email, Long transactionId) {
+<span class="fc" id="L133">        User user = userRepository.findByEmail(email)</span>
+<span class="fc" id="L134">                .orElseThrow(() -&gt; new UserNotFoundException(&quot;Utilisateur introuvable&quot;));</span>
+
+<span class="fc" id="L136">        Transaction transaction = transactionRepository.findByIdAndUser_Email(transactionId, email)</span>
+<span class="fc" id="L137">                .orElseThrow(() -&gt; new TransactionNotFoundException(&quot;Transaction introuvable&quot;));</span>
+
+<span class="fc" id="L139">        List&lt;Ticket&gt; validTickets = transaction.getTickets().stream()</span>
+<span class="pc bpc" id="L140" title="1 of 4 branches missed.">                .filter(t -&gt; Boolean.TRUE.equals(t.getIsValid()) &amp;&amp; !Boolean.TRUE.equals(t.getIsScanned()))</span>
+<span class="fc" id="L141">                .toList();</span>
+
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        if (validTickets.isEmpty()) {</span>
+<span class="fc" id="L144">            throw new IllegalStateException(&quot;Aucun billet valide disponible pour cette transaction&quot;);</span>
+        }
+
+<span class="fc" id="L147">        TransactionResponseDTO dto = ticketMapper.toTransactionResponseDTO(transaction, validTickets);</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">        String userLocale = user.getLocale() != null ? user.getLocale() : &quot;fr&quot;;</span>
+<span class="fc" id="L149">        return pdfTicketService.generate(dto, userLocale);</span>
+    }
+
+    @Transactional(readOnly = true)
+    public List&lt;TicketGroupResponseDTO&gt; getUserTicketGroups(String email) {
+<span class="fc" id="L154">        userRepository.findByEmail(email)</span>
+<span class="fc" id="L155">                .orElseThrow(() -&gt; new UserNotFoundException(&quot;Utilisateur introuvable&quot;));</span>
+
+<span class="fc" id="L157">        List&lt;Ticket&gt; tickets = ticketRepository.findAllByUser_EmailOrderByCreatedAtDesc(email);</span>
+
+<span class="fc" id="L159">        Map&lt;String, List&lt;Ticket&gt;&gt; grouped = tickets.stream()</span>
+<span class="fc" id="L160">                .collect(Collectors.groupingBy(t -&gt;</span>
+<span class="fc" id="L161">                        t.getTransaction().getId() + &quot;-&quot; + t.getEvent().getId() + &quot;-&quot; + t.getOffer().getId()));</span>
+
+<span class="fc" id="L163">        return grouped.values().stream()</span>
+<span class="fc" id="L164">                .map(ticketMapper::toTicketGroupResponseDTO)</span>
+<span class="fc" id="L165">                .sorted(Comparator.comparing(TicketGroupResponseDTO::purchasedAt).reversed())</span>
+<span class="fc" id="L166">                .toList();</span>
+    }
+
+    private List&lt;Ticket&gt; generateTickets(Cart cart, Transaction transaction, User user) {
+<span class="fc" id="L170">        List&lt;Ticket&gt; tickets = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        for (CartItems item : cart.getCartItems()) {</span>
+<span class="fc" id="L173">            int totalTicketCount = item.getQuantity() * item.getOffer().getNumberOfTickets();</span>
+<span class="fc" id="L174">            double pricePerTicket = item.getUnitPrice() / item.getOffer().getNumberOfTickets();</span>
+
+<span class="fc bfc" id="L176" title="All 2 branches covered.">            for (int i = 0; i &lt; totalTicketCount; i++) {</span>
+<span class="fc" id="L177">                String ticketKey = UUID.randomUUID().toString();</span>
+
+<span class="fc" id="L179">                Ticket ticket = new Ticket();</span>
+<span class="fc" id="L180">                String userKey = UUID.randomUUID().toString();</span>
+<span class="fc" id="L181">                ticket.setUserKey(userKey);</span>
+<span class="fc" id="L182">                ticket.setTransactionKey(transaction.getTransactionKey());</span>
+<span class="fc" id="L183">                ticket.setTicketKey(ticketKey);</span>
+<span class="fc" id="L184">                ticket.setCombinedKey(computeCombinedKey(userKey, ticketKey));</span>
+<span class="fc" id="L185">                ticket.setBarcode(&quot;JO2024-&quot; + ticketKey.substring(0, 8).toUpperCase());</span>
+<span class="fc" id="L186">                ticket.setPrice(pricePerTicket);</span>
+<span class="fc" id="L187">                ticket.setExpiryAt(item.getEvent().getEventDate());</span>
+<span class="fc" id="L188">                ticket.setIsValid(true);</span>
+<span class="fc" id="L189">                ticket.setIsScanned(false);</span>
+<span class="fc" id="L190">                ticket.setTransaction(transaction);</span>
+<span class="fc" id="L191">                ticket.setUser(user);</span>
+<span class="fc" id="L192">                ticket.setEvent(item.getEvent());</span>
+<span class="fc" id="L193">                ticket.setOffer(item.getOffer());</span>
+<span class="fc" id="L194">                tickets.add(ticket);</span>
+            }
+<span class="fc" id="L196">        }</span>
+
+<span class="fc" id="L198">        return tickets;</span>
+    }
+
+    private String computeCombinedKey(String userKey, String ticketKey) {
+        try {
+<span class="fc" id="L203">            MessageDigest digest = MessageDigest.getInstance(&quot;SHA-256&quot;);</span>
+<span class="fc" id="L204">            byte[] hash = digest.digest((userKey + &quot;:&quot; + ticketKey).getBytes(StandardCharsets.UTF_8));</span>
+<span class="fc" id="L205">            return HexFormat.of().formatHex(hash);</span>
+<span class="nc" id="L206">        } catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L207">            throw new IllegalStateException(e);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

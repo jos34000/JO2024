@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CookieService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.service</a> &gt; <span class="el_source">CookieService.java</span></div><h1>CookieService.java</h1><pre class="source lang-java linenums">package dev.jos.back.service;
+
+import dev.jos.back.properties.JwtProperties;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseCookie;
+import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+
+@Service
+@RequiredArgsConstructor
+public class CookieService {
+
+    private final JwtProperties jwtProperties;
+
+    @Value(&quot;${cookie.domain}&quot;)
+    private String domain;
+
+    @Value(&quot;${cookie.secure}&quot;)
+    private boolean secure;
+
+    @Value(&quot;${cookie.same-site}&quot;)
+    private String sameSite;
+
+    public ResponseCookie createAccessTokenCookie(String token) {
+<span class="fc" id="L27">        return createCookie(</span>
+<span class="fc" id="L28">                jwtProperties.getAccessToken().getCookieName(),</span>
+                token,
+<span class="fc" id="L30">                Duration.ofMillis(jwtProperties.getAccessToken().getExpiration())</span>
+        );
+    }
+
+    public ResponseCookie createRefreshTokenCookie(String token) {
+<span class="fc" id="L35">        return createCookie(</span>
+<span class="fc" id="L36">                jwtProperties.getRefreshToken().getCookieName(),</span>
+                token,
+<span class="fc" id="L38">                Duration.ofMillis(jwtProperties.getRefreshToken().getExpiration())</span>
+        );
+    }
+
+    public ResponseCookie createDeleteCookie(String cookieName) {
+<span class="fc" id="L43">        return createCookie(cookieName, &quot;&quot;, Duration.ZERO);</span>
+    }
+
+    private ResponseCookie createCookie(String name, String value, Duration maxAge) {
+<span class="fc" id="L47">        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie</span>
+<span class="fc" id="L48">                .from(name, value)</span>
+<span class="fc" id="L49">                .httpOnly(true)</span>
+<span class="fc" id="L50">                .secure(secure)</span>
+<span class="fc" id="L51">                .path(&quot;/&quot;)</span>
+<span class="fc" id="L52">                .maxAge(maxAge)</span>
+<span class="fc" id="L53">                .sameSite(sameSite);</span>
+
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (!domain.isEmpty()) {</span>
+<span class="fc" id="L56">            builder.domain(domain);</span>
+        }
+
+<span class="fc" id="L59">        return builder.build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

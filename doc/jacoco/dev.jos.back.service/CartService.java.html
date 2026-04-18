@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CartService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.service</a> &gt; <span class="el_source">CartService.java</span></div><h1>CartService.java</h1><pre class="source lang-java linenums">package dev.jos.back.service;
+
+import dev.jos.back.dto.cart.CartItemRequestDTO;
+import dev.jos.back.dto.cart.CartItemUpdateDTO;
+import dev.jos.back.dto.cart.CartResponseDTO;
+import dev.jos.back.entities.*;
+import dev.jos.back.exceptions.cart.CartItemNotFoundException;
+import dev.jos.back.exceptions.cart.CartNotFoundException;
+import dev.jos.back.exceptions.event.EventNotFoundException;
+import dev.jos.back.exceptions.event.EventSoldOutException;
+import dev.jos.back.exceptions.offertype.OfferNotFoundException;
+import dev.jos.back.exceptions.user.UserNotFoundException;
+import dev.jos.back.mapper.CartMapper;
+import dev.jos.back.repository.*;
+import dev.jos.back.util.enums.CartStatus;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+@Service
+@RequiredArgsConstructor
+public class CartService implements ICartService {
+
+    private final CartRepository cartRepository;
+    private final CartItemsRepository cartItemsRepository;
+    private final UserRepository userRepository;
+    private final EventRepository eventRepository;
+    private final OfferRepository offerRepository;
+    private final CartMapper cartMapper;
+
+    @Transactional
+    public CartResponseDTO getActiveCart(String email) {
+<span class="fc" id="L36">        User user = userRepository.findByEmail(email)</span>
+<span class="fc" id="L37">                .orElseThrow(() -&gt; new UserNotFoundException(&quot;Utilisateur introuvable&quot;));</span>
+
+<span class="fc" id="L39">        Cart cart = cartRepository.findByUserAndStatus(user, CartStatus.ACTIVE)</span>
+<span class="fc" id="L40">                .orElseThrow(() -&gt; new CartNotFoundException(&quot;Aucun panier actif&quot;));</span>
+
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (cart.expireIfNeeded()) {</span>
+<span class="fc" id="L43">            cartRepository.save(cart);</span>
+<span class="fc" id="L44">            throw new CartNotFoundException(&quot;Le panier a expiré&quot;);</span>
+        }
+
+<span class="fc" id="L47">        return cartMapper.toCartResponseDTO(cart);</span>
+    }
+
+    @Transactional
+    public CartResponseDTO addItem(String email, CartItemRequestDTO dto) {
+<span class="fc" id="L52">        User user = userRepository.findByEmail(email)</span>
+<span class="fc" id="L53">                .orElseThrow(() -&gt; new UserNotFoundException(&quot;Aucun utilisateur avec ce mail: &quot; + email));</span>
+
+<span class="fc" id="L55">        Cart cart = getOrCreateActiveCart(user);</span>
+
+<span class="fc" id="L57">        Event event = eventRepository.findById(dto.eventId())</span>
+<span class="fc" id="L58">                .orElseThrow(() -&gt; new EventNotFoundException(&quot;Évènement non trouvé : &quot; + dto.eventId()));</span>
+
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (event.getAvailableSlots() &lt;= 0) {</span>
+<span class="fc" id="L61">            throw new EventSoldOutException(&quot;Cet évènement est complet : &quot; + event.getName());</span>
+        }
+
+<span class="fc" id="L64">        Offer offer = offerRepository.findById(dto.offerId())</span>
+<span class="fc" id="L65">                .orElseThrow(() -&gt; new OfferNotFoundException(&quot;Cette offre n'existe plus : &quot; + dto.offerId()));</span>
+
+<span class="fc" id="L67">        Optional&lt;CartItems&gt; existing = cartItemsRepository.findByCartAndEventAndOffer(cart, event, offer);</span>
+
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        if (existing.isPresent()) {</span>
+<span class="fc" id="L70">            CartItems item = existing.get();</span>
+<span class="fc" id="L71">            item.setQuantity(item.getQuantity() + dto.quantity());</span>
+<span class="fc" id="L72">            cartItemsRepository.save(item);</span>
+<span class="fc" id="L73">        } else {</span>
+<span class="fc" id="L74">            CartItems item = new CartItems();</span>
+<span class="fc" id="L75">            item.setCart(cart);</span>
+<span class="fc" id="L76">            item.setEvent(event);</span>
+<span class="fc" id="L77">            item.setOffer(offer);</span>
+<span class="fc" id="L78">            item.setUnitPrice(offer.getPrice());</span>
+<span class="fc" id="L79">            item.setQuantity(dto.quantity());</span>
+<span class="fc" id="L80">            cartItemsRepository.save(item);</span>
+        }
+
+<span class="fc" id="L83">        Cart refreshed = cartRepository.findByIdWithItems(cart.getId())</span>
+<span class="pc" id="L84">                .orElseThrow(() -&gt; new CartNotFoundException(&quot;Panier introuvable&quot;));</span>
+<span class="fc" id="L85">        return cartMapper.toCartResponseDTO(refreshed);</span>
+    }
+
+    @Transactional
+    public CartResponseDTO removeItem(String email, Long itemId) {
+<span class="fc" id="L90">        User user = userRepository.findByEmail(email)</span>
+<span class="fc" id="L91">                .orElseThrow(() -&gt; new UserNotFoundException(&quot;Aucun utilisateur avec ce mail: &quot; + email));</span>
+
+<span class="fc" id="L93">        CartItems item = cartItemsRepository.findById(itemId)</span>
+<span class="fc" id="L94">                .orElseThrow(() -&gt; new CartItemNotFoundException(&quot;Article introuvable : &quot; + itemId));</span>
+
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        if (!item.getCart().getUser().getId().equals(user.getId())) {</span>
+<span class="fc" id="L97">            throw new CartItemNotFoundException(&quot;Article introuvable : &quot; + itemId);</span>
+        }
+
+<span class="fc" id="L100">        Cart cart = item.getCart();</span>
+<span class="fc" id="L101">        cartItemsRepository.delete(item);</span>
+<span class="fc" id="L102">        Cart refreshed = cartRepository.findByIdWithItems(cart.getId())</span>
+<span class="pc" id="L103">                .orElseThrow(() -&gt; new CartNotFoundException(&quot;Panier introuvable&quot;));</span>
+<span class="fc" id="L104">        return cartMapper.toCartResponseDTO(refreshed);</span>
+    }
+
+    @Transactional
+    public CartResponseDTO updateItemQuantity(String email, Long itemId, CartItemUpdateDTO dto) {
+<span class="fc" id="L109">        User user = userRepository.findByEmail(email)</span>
+<span class="fc" id="L110">                .orElseThrow(() -&gt; new UserNotFoundException(&quot;Utilisateur introuvable&quot;));</span>
+
+<span class="fc" id="L112">        CartItems item = cartItemsRepository.findById(itemId)</span>
+<span class="fc" id="L113">                .orElseThrow(() -&gt; new CartItemNotFoundException(&quot;Article introuvable&quot;));</span>
+
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        if (!item.getCart().getUser().getId().equals(user.getId())) {</span>
+<span class="fc" id="L116">            throw new CartItemNotFoundException(&quot;Article introuvable&quot;);</span>
+        }
+
+<span class="fc" id="L119">        Cart cart = item.getCart();</span>
+
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        if (dto.quantity() &lt;= 0) {</span>
+<span class="fc" id="L122">            cartItemsRepository.delete(item);</span>
+        } else {
+<span class="fc" id="L124">            item.setQuantity(dto.quantity());</span>
+<span class="fc" id="L125">            cartItemsRepository.save(item);</span>
+        }
+
+<span class="fc" id="L128">        Cart refreshed = cartRepository.findByIdWithItems(cart.getId())</span>
+<span class="pc" id="L129">                .orElseThrow(() -&gt; new CartNotFoundException(&quot;Panier introuvable&quot;));</span>
+<span class="fc" id="L130">        return cartMapper.toCartResponseDTO(refreshed);</span>
+    }
+
+    @Transactional
+    public CartResponseDTO clearCart(String email) {
+<span class="fc" id="L135">        User user = userRepository.findByEmail(email)</span>
+<span class="fc" id="L136">                .orElseThrow(() -&gt; new UserNotFoundException(&quot;Utilisateur introuvable&quot;));</span>
+
+<span class="fc" id="L138">        Cart cart = cartRepository.findByUserAndStatus(user, CartStatus.ACTIVE)</span>
+<span class="fc" id="L139">                .orElseThrow(() -&gt; new CartNotFoundException(&quot;Aucun panier actif&quot;));</span>
+
+<span class="fc" id="L141">        cartItemsRepository.deleteAll(cart.getCartItems());</span>
+<span class="fc" id="L142">        Cart refreshed = cartRepository.findByIdWithItems(cart.getId())</span>
+<span class="pc" id="L143">                .orElseThrow(() -&gt; new CartNotFoundException(&quot;Panier introuvable&quot;));</span>
+<span class="fc" id="L144">        return cartMapper.toCartResponseDTO(refreshed);</span>
+    }
+
+    private Cart getOrCreateActiveCart(User user) {
+<span class="fc" id="L148">        Optional&lt;Cart&gt; existing = cartRepository.findByUserAndStatus(user, CartStatus.ACTIVE);</span>
+
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        if (existing.isPresent()) {</span>
+<span class="fc" id="L151">            Cart cart = existing.get();</span>
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">            if (cart.expireIfNeeded()) {</span>
+<span class="nc" id="L153">                cartRepository.save(cart);</span>
+<span class="nc" id="L154">                return createNewCart(user);</span>
+            }
+<span class="fc" id="L156">            return cart;</span>
+        }
+
+<span class="fc" id="L159">        return createNewCart(user);</span>
+    }
+
+    private Cart createNewCart(User user) {
+<span class="fc" id="L163">        Cart cart = new Cart();</span>
+<span class="fc" id="L164">        cart.setUser(user);</span>
+<span class="fc" id="L165">        cart.setStatus(CartStatus.ACTIVE);</span>
+<span class="fc" id="L166">        cart.setExpiresAt(LocalDateTime.now().plusMinutes(30));</span>
+<span class="fc" id="L167">        return cartRepository.save(cart);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

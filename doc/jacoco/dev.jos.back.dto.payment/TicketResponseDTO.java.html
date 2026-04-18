@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TicketResponseDTO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.dto.payment</a> &gt; <span class="el_source">TicketResponseDTO.java</span></div><h1>TicketResponseDTO.java</h1><pre class="source lang-java linenums">package dev.jos.back.dto.payment;
+
+import dev.jos.back.dto.cart.CartEventSummaryDTO;
+import dev.jos.back.dto.cart.CartOfferSummaryDTO;
+import lombok.Builder;
+
+/**
+ * DTO représentant un billet généré après un paiement réussi.
+ *
+ * @param id         l'identifiant technique du billet
+ * @param ticketKey   la clé unique du billet (UUID)
+ * @param combinedKey la clé combinée SHA-256 (userKey + ticketKey) encodée dans le QR code
+ * @param barcode     le code-barre du billet au format JO2024-XXXXXXXX
+ * @param price      le prix unitaire du billet
+ * @param status     l'état du billet : {@code VALID}, {@code USED}, {@code EXPIRED} ou {@code CANCELLED}
+ * @param createdAt  la date de création du billet
+ * @param event      le résumé de l'événement associé
+ * @param offer      le résumé de l'offre associée
+ */
+@Builder
+<span class="fc" id="L21">public record TicketResponseDTO(</span>
+        Long id,
+        String ticketKey,
+        String combinedKey,
+        String barcode,
+        Double price,
+        String status,
+        java.time.LocalDateTime createdAt,
+        CartEventSummaryDTO event,
+        CartOfferSummaryDTO offer
+) {}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

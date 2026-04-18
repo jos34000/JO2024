@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.service</a> &gt; <span class="el_source">UserService.java</span></div><h1>UserService.java</h1><pre class="source lang-java linenums">package dev.jos.back.service;
+
+import dev.jos.back.dto.user.CreateUserDTO;
+import dev.jos.back.dto.user.UserResponseDTO;
+import dev.jos.back.entities.User;
+import dev.jos.back.exceptions.user.InvalidPasswordException;
+import dev.jos.back.exceptions.user.UserAlreadyExistsException;
+import dev.jos.back.exceptions.user.UserNotFoundException;
+import dev.jos.back.mapper.UserMapper;
+import dev.jos.back.repository.UserRepository;
+import dev.jos.back.util.enums.Role;
+import dev.jos.back.util.enums.TokenValidationResult;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class UserService {
+    private final UserRepository userRepository;
+    private final ResetTokenStore resetTokenStore;
+    private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final UserMapper userMapper;
+
+    public UserResponseDTO createUser(CreateUserDTO dto) {
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        if (userRepository.existsByEmail(dto.email())) {</span>
+<span class="fc" id="L34">            throw new UserAlreadyExistsException(&quot;Cet email est déjà utilisé&quot;);</span>
+        }
+
+<span class="fc" id="L37">        User user = userMapper.toEntity(dto);</span>
+<span class="fc" id="L38">        user.setPasswordHash(passwordEncoder.encode(dto.password()));</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        user.setRole(dto.role() != null ? dto.role() : Role.ROLE_USER);</span>
+
+<span class="fc" id="L41">        User savedUser = userRepository.save(user);</span>
+<span class="fc" id="L42">        return userMapper.toResponseDTO(savedUser);</span>
+    }
+
+    @Transactional
+    public UserResponseDTO updateUser(String authEmail, String newEmail, String newFirstName, String newLastName, boolean twoFactor) {
+<span class="pc bpc" id="L47" title="1 of 4 branches missed.">        if (!newEmail.equals(authEmail) &amp;&amp; userRepository.existsByEmail(newEmail)) {</span>
+<span class="fc" id="L48">            throw new UserAlreadyExistsException(&quot;Cet email est déjà utilisé&quot;);</span>
+        }
+
+<span class="fc" id="L51">        User user = userRepository.findByEmail(authEmail)</span>
+<span class="fc" id="L52">                .orElseThrow(() -&gt; new UsernameNotFoundException(&quot;Utilisateur introuvable&quot;));</span>
+<span class="fc" id="L53">        user.setEmail(newEmail);</span>
+<span class="fc" id="L54">        user.setFirstName(newFirstName);</span>
+<span class="fc" id="L55">        user.setLastName(newLastName);</span>
+<span class="fc" id="L56">        user.setMfaEnabled(twoFactor);</span>
+<span class="fc" id="L57">        User modifiedUser = userRepository.saveAndFlush(user);</span>
+<span class="fc" id="L58">        return userMapper.toResponseDTO(modifiedUser);</span>
+    }
+
+    public UserResponseDTO getUserResponseDto(String email) {
+<span class="fc" id="L62">        User user = userRepository.findByEmail(email)</span>
+<span class="fc" id="L63">                .orElseThrow(() -&gt; new UsernameNotFoundException(&quot;User not found: &quot; + email));</span>
+
+<span class="fc" id="L65">        return userMapper.toResponseDTO(user);</span>
+    }
+
+    @Transactional
+    public void updatePassword(String email, String oldPassword, String newPassword) {
+<span class="fc" id="L70">        User user = userRepository.findByEmail(email)</span>
+<span class="fc" id="L71">                .orElseThrow(() -&gt; new UsernameNotFoundException(&quot;Utilisateur non trouvé&quot;));</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {</span>
+<span class="fc" id="L73">            throw new InvalidPasswordException(&quot;Mot de passe actuel incorrect&quot;);</span>
+        }
+
+<span class="fc" id="L76">        String encodedPassword = passwordEncoder.encode(newPassword);</span>
+<span class="fc" id="L77">        user.setPasswordHash(encodedPassword);</span>
+<span class="fc" id="L78">        userRepository.saveAndFlush(user);</span>
+<span class="fc" id="L79">    }</span>
+
+    public void resetPassword(String email) {
+<span class="fc" id="L82">        User user = userRepository.findByEmail(email).orElse(null);</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (user == null) return;</span>
+
+<span class="fc" id="L85">        String token = UUID.randomUUID().toString();</span>
+<span class="fc" id="L86">        LocalDateTime expiry = LocalDateTime.now().plusHours(1);</span>
+
+<span class="fc" id="L88">        resetTokenStore.store(user, token, expiry);</span>
+
+<span class="fc" id="L90">        String resetLink = &quot;http://localhost:3000/reset-password?token=&quot; + token;</span>
+<span class="fc" id="L91">        emailService.sendPasswordResetEmail(user.getEmail(), user.getFirstName(), resetLink, user.getLocale());</span>
+<span class="fc" id="L92">    }</span>
+
+    @Transactional
+    public void updateLocale(String email, String locale) {
+<span class="fc" id="L96">        User user = userRepository.findByEmail(email)</span>
+<span class="fc" id="L97">                .orElseThrow(() -&gt; new UsernameNotFoundException(&quot;Utilisateur introuvable&quot;));</span>
+<span class="fc" id="L98">        user.setLocale(locale);</span>
+<span class="fc" id="L99">        userRepository.saveAndFlush(user);</span>
+<span class="fc" id="L100">    }</span>
+
+    public TokenValidationResult validateResetToken(String token) {
+<span class="fc" id="L103">        return resetTokenStore.validate(token);</span>
+    }
+
+    public List&lt;UserResponseDTO&gt; getAllUsers() {
+<span class="fc" id="L107">        return userRepository.findAll().stream()</span>
+<span class="fc" id="L108">                .map(userMapper::toResponseDTO)</span>
+<span class="fc" id="L109">                .toList();</span>
+    }
+
+    @Transactional
+    public void deleteUser(Long id) {
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (!userRepository.existsById(id)) {</span>
+<span class="fc" id="L115">            throw new UserNotFoundException(&quot;Utilisateur non trouvé&quot;);</span>
+        }
+<span class="fc" id="L117">        userRepository.deleteById(id);</span>
+<span class="fc" id="L118">    }</span>
+
+    @Transactional
+    public UserResponseDTO updateUserRole(Long id, Role role) {
+<span class="fc" id="L122">        User user = userRepository.findById(id)</span>
+<span class="fc" id="L123">                .orElseThrow(() -&gt; new UserNotFoundException(&quot;Utilisateur non trouvé&quot;));</span>
+<span class="fc" id="L124">        user.setRole(role);</span>
+<span class="fc" id="L125">        return userMapper.toResponseDTO(userRepository.saveAndFlush(user));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

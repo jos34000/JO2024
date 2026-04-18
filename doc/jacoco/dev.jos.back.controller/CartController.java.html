@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CartController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.controller</a> &gt; <span class="el_source">CartController.java</span></div><h1>CartController.java</h1><pre class="source lang-java linenums">package dev.jos.back.controller;
+
+import dev.jos.back.dto.cart.CartItemRequestDTO;
+import dev.jos.back.dto.cart.CartItemUpdateDTO;
+import dev.jos.back.dto.cart.CartResponseDTO;
+import dev.jos.back.service.ICartService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * Contrôleur REST pour la gestion du panier d'achat.
+ * Fournit des endpoints pour consulter et modifier le panier de l'utilisateur authentifié.
+ *
+ * @see ICartService
+ */
+@RestController
+@RequestMapping(&quot;/api/cart&quot;)
+@RequiredArgsConstructor
+public class CartController {
+
+    private final ICartService cartService;
+
+    /**
+     * Récupère le panier actif de l'utilisateur authentifié avec l'ensemble de ses articles.
+     * Le panier retourné est celui dont le statut est {@code ACTIVE}. Si le panier
+     * est expiré au moment de la requête, il est automatiquement marqué {@code ABANDONED}
+     * et une réponse 404 est renvoyée.
+     *
+     * @param authentication l'objet d'authentification Spring Security injecté automatiquement
+     * @return {@code ResponseEntity&lt;CartResponseDTO&gt;} contenant le panier actif
+     */
+    @GetMapping
+    public ResponseEntity&lt;CartResponseDTO&gt; getActiveCart(Authentication authentication) {
+<span class="nc" id="L45">        String email = authentication.getName();</span>
+<span class="nc" id="L46">        CartResponseDTO cart = cartService.getActiveCart(email);</span>
+<span class="nc" id="L47">        return ResponseEntity.ok(cart);</span>
+    }
+
+    /**
+     * Ajoute un article au panier de l'utilisateur authentifié.
+     * Si l'utilisateur n'a pas de panier actif, un nouveau est créé (expiration 30 min).
+     * Si le même couple event/offer est déjà dans le panier, la quantité est incrémentée.
+     *
+     * @param authentication l'objet d'authentification Spring Security
+     * @param dto            l'article à ajouter (eventId, offerId, quantity)
+     * @return {@code ResponseEntity&lt;CartResponseDTO&gt;} contenant le panier mis à jour
+     */
+    @PostMapping(&quot;/items&quot;)
+    public ResponseEntity&lt;CartResponseDTO&gt; addItem(
+            Authentication authentication,
+            @Valid @RequestBody CartItemRequestDTO dto
+    ) {
+<span class="nc" id="L64">        String email = authentication.getName();</span>
+<span class="nc" id="L65">        CartResponseDTO cart = cartService.addItem(email, dto);</span>
+<span class="nc" id="L66">        return ResponseEntity.status(HttpStatus.CREATED).body(cart);</span>
+    }
+
+    /**
+     * Met à jour la quantité d'un article dans le panier de l'utilisateur authentifié.
+     * Si la quantité est inférieure ou égale à zéro, l'article est supprimé du panier.
+     *
+     * @param authentication l'objet d'authentification Spring Security
+     * @param itemId         l'identifiant de l'article à modifier
+     * @param dto            la nouvelle quantité souhaitée (doit être &amp;gt;= 0 ; 0 = suppression)
+     * @return {@code ResponseEntity&lt;CartResponseDTO&gt;} contenant le panier mis à jour
+     * @throws dev.jos.back.exceptions.cart.CartItemNotFoundException si l'article n'existe pas
+     *                                                                ou n'appartient pas à l'utilisateur
+     */
+    @PatchMapping(&quot;/items/{itemId}&quot;)
+    public ResponseEntity&lt;CartResponseDTO&gt; updateItemQuantity(
+            Authentication authentication,
+            @PathVariable Long itemId,
+            @Valid @RequestBody CartItemUpdateDTO dto
+    ) {
+<span class="nc" id="L86">        String email = authentication.getName();</span>
+<span class="nc" id="L87">        CartResponseDTO cart = cartService.updateItemQuantity(email, itemId, dto);</span>
+<span class="nc" id="L88">        return ResponseEntity.ok(cart);</span>
+    }
+
+    /**
+     * Vide entièrement le panier de l'utilisateur authentifié en supprimant tous ses articles.
+     *
+     * @param authentication l'objet d'authentification Spring Security
+     * @return {@code ResponseEntity&lt;CartResponseDTO&gt;} contenant le panier vide
+     * @throws dev.jos.back.exceptions.cart.CartNotFoundException si l'utilisateur n'a pas de panier actif
+     */
+    @DeleteMapping(&quot;/items&quot;)
+    public ResponseEntity&lt;CartResponseDTO&gt; clearCart(Authentication authentication) {
+<span class="nc" id="L100">        String email = authentication.getName();</span>
+<span class="nc" id="L101">        CartResponseDTO cart = cartService.clearCart(email);</span>
+<span class="nc" id="L102">        return ResponseEntity.ok(cart);</span>
+    }
+
+    /**
+     * Supprime un article du panier de l'utilisateur authentifié.
+     *
+     * @param authentication l'objet d'authentification Spring Security
+     * @param itemId         l'identifiant de l'article à supprimer
+     * @return {@code ResponseEntity&lt;CartResponseDTO&gt;} contenant le panier mis à jour sans l'article supprimé
+     * @throws dev.jos.back.exceptions.cart.CartItemNotFoundException si l'article n'existe pas
+     *                                                                ou n'appartient pas à l'utilisateur
+     */
+    @DeleteMapping(&quot;/items/{itemId}&quot;)
+    public ResponseEntity&lt;CartResponseDTO&gt; removeItem(
+            Authentication authentication,
+            @PathVariable Long itemId
+    ) {
+<span class="nc" id="L119">        String email = authentication.getName();</span>
+<span class="nc" id="L120">        CartResponseDTO cart = cartService.removeItem(email, itemId);</span>
+<span class="nc" id="L121">        return ResponseEntity.ok(cart);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

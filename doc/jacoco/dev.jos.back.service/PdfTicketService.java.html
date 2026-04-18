@@ -1,0 +1,526 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PdfTicketService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.service</a> &gt; <span class="el_source">PdfTicketService.java</span></div><h1>PdfTicketService.java</h1><pre class="source lang-java linenums">package dev.jos.back.service;
+
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.lowagie.text.*;
+import com.lowagie.text.Font;
+import com.lowagie.text.Image;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
+import dev.jos.back.dto.payment.TicketResponseDTO;
+import dev.jos.back.dto.payment.TransactionResponseDTO;
+import dev.jos.back.util.enums.Phases;
+import dev.jos.back.util.enums.SupportedLocale;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.time.format.DateTimeFormatter;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+<span class="fc" id="L31">@Slf4j</span>
+@Service
+<span class="fc" id="L33">public class PdfTicketService {</span>
+
+<span class="fc" id="L35">    private static final Color OLYMPIC_BLUE = new Color(0x00, 0x3D, 0xA5);</span>
+<span class="fc" id="L36">    private static final Color OLYMPIC_GOLD = new Color(0xC8, 0xA8, 0x4B);</span>
+<span class="fc" id="L37">    private static final Color LIGHT_GRAY = new Color(0xF5, 0xF5, 0xF5);</span>
+<span class="fc" id="L38">    private static final Color MID_GRAY = new Color(0x6B, 0x6B, 0x6B);</span>
+<span class="fc" id="L39">    private static final Color BORDER_GRAY = new Color(0xE0, 0xE0, 0xE0);</span>
+<span class="fc" id="L40">    private static final Color DARK = new Color(0x1A, 0x1A, 0x1A);</span>
+<span class="fc" id="L41">    private static final Color DARK_MID = new Color(0x4A, 0x4A, 0x4A);</span>
+
+<span class="fc" id="L43">    private static final Font FONT_HEADER_TITLE = new Font(Font.HELVETICA, 20f, Font.BOLD, Color.WHITE);</span>
+<span class="fc" id="L44">    private static final Font FONT_HEADER_SUB = new Font(Font.HELVETICA, 9f, Font.NORMAL, OLYMPIC_GOLD);</span>
+<span class="fc" id="L45">    private static final Font FONT_BADGE = new Font(Font.HELVETICA, 8f, Font.BOLD, Color.WHITE);</span>
+<span class="fc" id="L46">    private static final Font FONT_LABEL = new Font(Font.HELVETICA, 7f, Font.NORMAL, MID_GRAY);</span>
+<span class="fc" id="L47">    private static final Font FONT_EVENT_NAME = new Font(Font.HELVETICA, 18f, Font.BOLD, DARK);</span>
+<span class="fc" id="L48">    private static final Font FONT_EVENT_META = new Font(Font.HELVETICA, 10f, Font.NORMAL, MID_GRAY);</span>
+<span class="fc" id="L49">    private static final Font FONT_INFO_VALUE = new Font(Font.HELVETICA, 11f, Font.BOLD, DARK);</span>
+<span class="fc" id="L50">    private static final Font FONT_BARCODE = new Font(Font.COURIER, 8f, Font.NORMAL, MID_GRAY);</span>
+<span class="fc" id="L51">    private static final Font FONT_INSTRUCTIONS = new Font(Font.HELVETICA, 8f, Font.ITALIC, DARK_MID);</span>
+<span class="fc" id="L52">    private static final Font FONT_PRICE_LABEL = new Font(Font.HELVETICA, 11f, Font.NORMAL, MID_GRAY);</span>
+<span class="fc" id="L53">    private static final Font FONT_PRICE_VALUE = new Font(Font.HELVETICA, 18f, Font.BOLD, OLYMPIC_BLUE);</span>
+<span class="fc" id="L54">    private static final Font FONT_REF_LABEL = new Font(Font.HELVETICA, 8f, Font.NORMAL, MID_GRAY);</span>
+<span class="fc" id="L55">    private static final Font FONT_REF_VALUE = new Font(Font.HELVETICA, 8f, Font.BOLD, DARK);</span>
+<span class="fc" id="L56">    private static final Font FONT_FOOTER = new Font(Font.HELVETICA, 7f, Font.NORMAL, MID_GRAY);</span>
+
+    private static final EnumMap&lt;SupportedLocale, PdfLabels&gt; LABELS;
+
+    static {
+<span class="fc" id="L61">        LABELS = new EnumMap&lt;&gt;(SupportedLocale.class);</span>
+
+<span class="fc" id="L63">        LABELS.put(SupportedLocale.FR, new PdfLabels(</span>
+                &quot;Jeux Olympiques · Billet officiel&quot;,
+                &quot;BILLET&quot;, &quot;ÉPREUVE&quot;, &quot;CATÉGORIE&quot;, &quot;PLACES INCLUSES&quot;, &quot;PHASE&quot;,
+                &quot;CODE-BARRE&quot;, &quot;INSTRUCTIONS&quot;,
+                &quot;Présentez ce QR code à l'entrée du stade.\nValable pour la date indiquée uniquement.&quot;,
+                &quot;Référence de paiement&quot;, &quot;Montant du billet&quot;,
+                &quot;© Paris 2024 · Comité d'Organisation des Jeux Olympiques&quot;,
+                &quot;Ce billet est personnel et non cessible.&quot;,
+<span class="fc" id="L71">                DateTimeFormatter.ofPattern(&quot;EEEE d MMMM yyyy 'à' HH:mm&quot;, Locale.FRENCH),</span>
+                Locale.FRENCH,
+<span class="fc" id="L73">                phaseMapFr()</span>
+        ));
+
+<span class="fc" id="L76">        LABELS.put(SupportedLocale.EN, new PdfLabels(</span>
+                &quot;Olympic Games · Official Ticket&quot;,
+                &quot;TICKET&quot;, &quot;EVENT&quot;, &quot;CATEGORY&quot;, &quot;INCLUDED SEATS&quot;, &quot;PHASE&quot;,
+                &quot;BARCODE&quot;, &quot;INSTRUCTIONS&quot;,
+                &quot;Present this QR code at the stadium entrance.\nValid for the indicated date only.&quot;,
+                &quot;Payment reference&quot;, &quot;Ticket price&quot;,
+                &quot;© Paris 2024 · Paris 2024 Organising Committee&quot;,
+                &quot;This ticket is personal and non-transferable.&quot;,
+<span class="fc" id="L84">                DateTimeFormatter.ofPattern(&quot;EEEE, MMMM d yyyy 'at' HH:mm&quot;, Locale.ENGLISH),</span>
+                Locale.ENGLISH,
+<span class="fc" id="L86">                phaseMapEn()</span>
+        ));
+
+<span class="fc" id="L89">        LABELS.put(SupportedLocale.DE, new PdfLabels(</span>
+                &quot;Olympische Spiele · Offizielles Ticket&quot;,
+                &quot;TICKET&quot;, &quot;WETTKAMPF&quot;, &quot;KATEGORIE&quot;, &quot;ENTHALTENE PLÄTZE&quot;, &quot;PHASE&quot;,
+                &quot;BARCODE&quot;, &quot;HINWEISE&quot;,
+                &quot;Zeigen Sie diesen QR-Code am Stadioneingang vor.\nNur für das angegebene Datum gültig.&quot;,
+                &quot;Zahlungsreferenz&quot;, &quot;Ticketpreis&quot;,
+                &quot;© Paris 2024 · Organisationskomitee Paris 2024&quot;,
+                &quot;Dieses Ticket ist persönlich und nicht übertragbar.&quot;,
+<span class="fc" id="L97">                DateTimeFormatter.ofPattern(&quot;EEEE, d. MMMM yyyy 'um' HH:mm&quot;, Locale.GERMAN),</span>
+                Locale.GERMAN,
+<span class="fc" id="L99">                phaseMapDe()</span>
+        ));
+
+<span class="fc" id="L102">        LABELS.put(SupportedLocale.ES, new PdfLabels(</span>
+                &quot;Juegos Olímpicos · Entrada oficial&quot;,
+                &quot;ENTRADA&quot;, &quot;EVENTO&quot;, &quot;CATEGORÍA&quot;, &quot;PLAZAS INCLUIDAS&quot;, &quot;FASE&quot;,
+                &quot;CÓDIGO DE BARRAS&quot;, &quot;INSTRUCCIONES&quot;,
+                &quot;Presente este código QR en la entrada del estadio.\nVálido únicamente para la fecha indicada.&quot;,
+                &quot;Referencia de pago&quot;, &quot;Precio de la entrada&quot;,
+                &quot;© París 2024 · Comité Organizador de París 2024&quot;,
+                &quot;Esta entrada es personal e intransferible.&quot;,
+<span class="fc" id="L110">                DateTimeFormatter.ofPattern(&quot;EEEE, d 'de' MMMM 'de' yyyy 'a las' HH:mm&quot;, Locale.of(&quot;es&quot;)),</span>
+<span class="fc" id="L111">                Locale.of(&quot;es&quot;),</span>
+<span class="fc" id="L112">                phaseMapEs()</span>
+        ));
+<span class="fc" id="L114">    }</span>
+
+    private static Map&lt;Phases, String&gt; phaseMapFr() {
+<span class="fc" id="L117">        return Map.ofEntries(</span>
+<span class="fc" id="L118">                Map.entry(Phases.SERIES, &quot;Séries&quot;),</span>
+<span class="fc" id="L119">                Map.entry(Phases.REPECHAGE, &quot;Repêchage&quot;),</span>
+<span class="fc" id="L120">                Map.entry(Phases.QUALIFICATION, &quot;Qualification&quot;),</span>
+<span class="fc" id="L121">                Map.entry(Phases.TOUR_PRELIMINAIRE, &quot;Tour préliminaire&quot;),</span>
+<span class="fc" id="L122">                Map.entry(Phases.PHASE_DE_POULES, &quot;Phase de poules&quot;),</span>
+<span class="fc" id="L123">                Map.entry(Phases.PHASE_DE_GROUPES, &quot;Phase de groupes&quot;),</span>
+<span class="fc" id="L124">                Map.entry(Phases.SOIXANTE_QUATRIEME_DE_FINALE, &quot;64e de finale&quot;),</span>
+<span class="fc" id="L125">                Map.entry(Phases.TRENTE_DEUXIEME_DE_FINALE, &quot;32e de finale&quot;),</span>
+<span class="fc" id="L126">                Map.entry(Phases.SEIZIEME_DE_FINALE, &quot;16e de finale&quot;),</span>
+<span class="fc" id="L127">                Map.entry(Phases.QUART_DE_FINALE, &quot;Quart de finale&quot;),</span>
+<span class="fc" id="L128">                Map.entry(Phases.DEMI_FINALE, &quot;Demi-finale&quot;),</span>
+<span class="fc" id="L129">                Map.entry(Phases.FINALE, &quot;Finale&quot;),</span>
+<span class="fc" id="L130">                Map.entry(Phases.CONTRE_LA_MONTRE, &quot;Contre-la-montre&quot;),</span>
+<span class="fc" id="L131">                Map.entry(Phases.CLASSEMENT, &quot;Classement&quot;),</span>
+<span class="fc" id="L132">                Map.entry(Phases.RELAIS_MIXTE, &quot;Relais mixte&quot;),</span>
+<span class="fc" id="L133">                Map.entry(Phases.EPREUVE_PAR_EQUIPES, &quot;Épreuve par équipes&quot;),</span>
+<span class="fc" id="L134">                Map.entry(Phases.MATCH_BRONZE, &quot;Match pour la médaille de bronze&quot;)</span>
+        );
+    }
+
+    private static Map&lt;Phases, String&gt; phaseMapEn() {
+<span class="fc" id="L139">        return Map.ofEntries(</span>
+<span class="fc" id="L140">                Map.entry(Phases.SERIES, &quot;Heats&quot;),</span>
+<span class="fc" id="L141">                Map.entry(Phases.REPECHAGE, &quot;Repechage&quot;),</span>
+<span class="fc" id="L142">                Map.entry(Phases.QUALIFICATION, &quot;Qualification&quot;),</span>
+<span class="fc" id="L143">                Map.entry(Phases.TOUR_PRELIMINAIRE, &quot;Preliminary Round&quot;),</span>
+<span class="fc" id="L144">                Map.entry(Phases.PHASE_DE_POULES, &quot;Pool Stage&quot;),</span>
+<span class="fc" id="L145">                Map.entry(Phases.PHASE_DE_GROUPES, &quot;Group Stage&quot;),</span>
+<span class="fc" id="L146">                Map.entry(Phases.SOIXANTE_QUATRIEME_DE_FINALE, &quot;Round of 128&quot;),</span>
+<span class="fc" id="L147">                Map.entry(Phases.TRENTE_DEUXIEME_DE_FINALE, &quot;Round of 64&quot;),</span>
+<span class="fc" id="L148">                Map.entry(Phases.SEIZIEME_DE_FINALE, &quot;Round of 32&quot;),</span>
+<span class="fc" id="L149">                Map.entry(Phases.QUART_DE_FINALE, &quot;Quarterfinal&quot;),</span>
+<span class="fc" id="L150">                Map.entry(Phases.DEMI_FINALE, &quot;Semifinal&quot;),</span>
+<span class="fc" id="L151">                Map.entry(Phases.FINALE, &quot;Final&quot;),</span>
+<span class="fc" id="L152">                Map.entry(Phases.CONTRE_LA_MONTRE, &quot;Time Trial&quot;),</span>
+<span class="fc" id="L153">                Map.entry(Phases.CLASSEMENT, &quot;Ranking&quot;),</span>
+<span class="fc" id="L154">                Map.entry(Phases.RELAIS_MIXTE, &quot;Mixed Relay&quot;),</span>
+<span class="fc" id="L155">                Map.entry(Phases.EPREUVE_PAR_EQUIPES, &quot;Team Event&quot;),</span>
+<span class="fc" id="L156">                Map.entry(Phases.MATCH_BRONZE, &quot;Bronze Medal Match&quot;)</span>
+        );
+    }
+
+    private static Map&lt;Phases, String&gt; phaseMapDe() {
+<span class="fc" id="L161">        return Map.ofEntries(</span>
+<span class="fc" id="L162">                Map.entry(Phases.SERIES, &quot;Vorläufe&quot;),</span>
+<span class="fc" id="L163">                Map.entry(Phases.REPECHAGE, &quot;Hoffnungslauf&quot;),</span>
+<span class="fc" id="L164">                Map.entry(Phases.QUALIFICATION, &quot;Qualifikation&quot;),</span>
+<span class="fc" id="L165">                Map.entry(Phases.TOUR_PRELIMINAIRE, &quot;Vorrunde&quot;),</span>
+<span class="fc" id="L166">                Map.entry(Phases.PHASE_DE_POULES, &quot;Poolphase&quot;),</span>
+<span class="fc" id="L167">                Map.entry(Phases.PHASE_DE_GROUPES, &quot;Gruppenphase&quot;),</span>
+<span class="fc" id="L168">                Map.entry(Phases.SOIXANTE_QUATRIEME_DE_FINALE, &quot;Runde der letzten 128&quot;),</span>
+<span class="fc" id="L169">                Map.entry(Phases.TRENTE_DEUXIEME_DE_FINALE, &quot;Runde der letzten 64&quot;),</span>
+<span class="fc" id="L170">                Map.entry(Phases.SEIZIEME_DE_FINALE, &quot;Runde der letzten 32&quot;),</span>
+<span class="fc" id="L171">                Map.entry(Phases.QUART_DE_FINALE, &quot;Viertelfinale&quot;),</span>
+<span class="fc" id="L172">                Map.entry(Phases.DEMI_FINALE, &quot;Halbfinale&quot;),</span>
+<span class="fc" id="L173">                Map.entry(Phases.FINALE, &quot;Finale&quot;),</span>
+<span class="fc" id="L174">                Map.entry(Phases.CONTRE_LA_MONTRE, &quot;Einzelzeitfahren&quot;),</span>
+<span class="fc" id="L175">                Map.entry(Phases.CLASSEMENT, &quot;Platzierungsrunde&quot;),</span>
+<span class="fc" id="L176">                Map.entry(Phases.RELAIS_MIXTE, &quot;Gemischte Staffel&quot;),</span>
+<span class="fc" id="L177">                Map.entry(Phases.EPREUVE_PAR_EQUIPES, &quot;Mannschaftswettbewerb&quot;),</span>
+<span class="fc" id="L178">                Map.entry(Phases.MATCH_BRONZE, &quot;Spiel um Bronze&quot;)</span>
+        );
+    }
+
+    private static Map&lt;Phases, String&gt; phaseMapEs() {
+<span class="fc" id="L183">        return Map.ofEntries(</span>
+<span class="fc" id="L184">                Map.entry(Phases.SERIES, &quot;Series&quot;),</span>
+<span class="fc" id="L185">                Map.entry(Phases.REPECHAGE, &quot;Repesca&quot;),</span>
+<span class="fc" id="L186">                Map.entry(Phases.QUALIFICATION, &quot;Clasificación&quot;),</span>
+<span class="fc" id="L187">                Map.entry(Phases.TOUR_PRELIMINAIRE, &quot;Ronda preliminar&quot;),</span>
+<span class="fc" id="L188">                Map.entry(Phases.PHASE_DE_POULES, &quot;Fase de grupos&quot;),</span>
+<span class="fc" id="L189">                Map.entry(Phases.PHASE_DE_GROUPES, &quot;Fase de grupos&quot;),</span>
+<span class="fc" id="L190">                Map.entry(Phases.SOIXANTE_QUATRIEME_DE_FINALE, &quot;Ronda de 128&quot;),</span>
+<span class="fc" id="L191">                Map.entry(Phases.TRENTE_DEUXIEME_DE_FINALE, &quot;Ronda de 64&quot;),</span>
+<span class="fc" id="L192">                Map.entry(Phases.SEIZIEME_DE_FINALE, &quot;Ronda de 32&quot;),</span>
+<span class="fc" id="L193">                Map.entry(Phases.QUART_DE_FINALE, &quot;Cuartos de final&quot;),</span>
+<span class="fc" id="L194">                Map.entry(Phases.DEMI_FINALE, &quot;Semifinal&quot;),</span>
+<span class="fc" id="L195">                Map.entry(Phases.FINALE, &quot;Final&quot;),</span>
+<span class="fc" id="L196">                Map.entry(Phases.CONTRE_LA_MONTRE, &quot;Contrarreloj&quot;),</span>
+<span class="fc" id="L197">                Map.entry(Phases.CLASSEMENT, &quot;Clasificación&quot;),</span>
+<span class="fc" id="L198">                Map.entry(Phases.RELAIS_MIXTE, &quot;Relevo mixto&quot;),</span>
+<span class="fc" id="L199">                Map.entry(Phases.EPREUVE_PAR_EQUIPES, &quot;Prueba por equipos&quot;),</span>
+<span class="fc" id="L200">                Map.entry(Phases.MATCH_BRONZE, &quot;Partido por el bronce&quot;)</span>
+        );
+    }
+
+    private PdfLabels getLabels(String locale) {
+<span class="fc" id="L205">        return LABELS.get(SupportedLocale.from(locale));</span>
+    }
+
+    static PdfLabels labelsFor(String locale) {
+<span class="nc" id="L209">        return LABELS.get(SupportedLocale.from(locale));</span>
+    }
+
+    public byte[] generate(TransactionResponseDTO dto) {
+<span class="fc" id="L213">        return generate(dto, &quot;fr&quot;);</span>
+    }
+
+
+    public byte[] generate(TransactionResponseDTO dto, String locale) {
+<span class="fc" id="L218">        PdfLabels labels = getLabels(locale);</span>
+<span class="fc" id="L219">        List&lt;TicketResponseDTO&gt; tickets = dto.tickets();</span>
+<span class="fc" id="L220">        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {</span>
+<span class="fc" id="L221">            Document document = new Document(PageSize.A4, 0, 0, 0, 0);</span>
+<span class="fc" id="L222">            PdfWriter.getInstance(document, baos);</span>
+<span class="fc" id="L223">            document.open();</span>
+
+<span class="fc bfc" id="L225" title="All 2 branches covered.">            for (int i = 0; i &lt; tickets.size(); i++) {</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">                if (i &gt; 0) document.newPage();</span>
+<span class="fc" id="L227">                addTicketPage(document, tickets.get(i), dto, i, tickets.size(), labels);</span>
+            }
+
+<span class="fc" id="L230">            document.close();</span>
+<span class="fc" id="L231">            return baos.toByteArray();</span>
+<span class="fc" id="L232">        } catch (Exception e) {</span>
+<span class="fc" id="L233">            log.error(&quot;Échec génération PDF billets pour transaction {}: {}&quot;, dto.id(), e.getMessage(), e);</span>
+<span class="fc" id="L234">            throw new RuntimeException(&quot;Impossible de générer le PDF des billets&quot;, e);</span>
+        }
+    }
+
+    private void addTicketPage(Document doc, TicketResponseDTO ticket,
+                               TransactionResponseDTO tx, int index, int total,
+                               PdfLabels labels) throws Exception {
+<span class="fc" id="L241">        float margin = 32f;</span>
+<span class="fc" id="L242">        float pageW = doc.getPageSize().getWidth();</span>
+
+<span class="fc" id="L244">        PdfPTable header = new PdfPTable(2);</span>
+<span class="fc" id="L245">        header.setTotalWidth(pageW);</span>
+<span class="fc" id="L246">        header.setLockedWidth(true);</span>
+
+<span class="fc" id="L248">        PdfPCell titleCell = new PdfPCell();</span>
+<span class="fc" id="L249">        titleCell.setBackgroundColor(OLYMPIC_BLUE);</span>
+<span class="fc" id="L250">        titleCell.setBorder(Rectangle.NO_BORDER);</span>
+<span class="fc" id="L251">        titleCell.setPadding(0);</span>
+<span class="fc" id="L252">        titleCell.setPaddingLeft(margin);</span>
+<span class="fc" id="L253">        titleCell.setPaddingTop(20);</span>
+<span class="fc" id="L254">        titleCell.setPaddingBottom(20);</span>
+
+<span class="fc" id="L256">        Paragraph titlePara = new Paragraph(&quot;PARIS 2024&quot;, FONT_HEADER_TITLE);</span>
+<span class="fc" id="L257">        titlePara.setSpacingAfter(3);</span>
+<span class="fc" id="L258">        Paragraph subtitlePara = new Paragraph(labels.subtitle(), FONT_HEADER_SUB);</span>
+<span class="fc" id="L259">        titleCell.addElement(titlePara);</span>
+<span class="fc" id="L260">        titleCell.addElement(subtitlePara);</span>
+
+<span class="fc" id="L262">        PdfPCell badgeCell = new PdfPCell();</span>
+<span class="fc" id="L263">        badgeCell.setBackgroundColor(OLYMPIC_BLUE);</span>
+<span class="fc" id="L264">        badgeCell.setBorder(Rectangle.NO_BORDER);</span>
+<span class="fc" id="L265">        badgeCell.setHorizontalAlignment(Element.ALIGN_RIGHT);</span>
+<span class="fc" id="L266">        badgeCell.setVerticalAlignment(Element.ALIGN_MIDDLE);</span>
+<span class="fc" id="L267">        badgeCell.setPaddingRight(margin);</span>
+
+<span class="fc" id="L269">        PdfPTable badgeInner = new PdfPTable(1);</span>
+<span class="fc" id="L270">        badgeInner.setWidthPercentage(60);</span>
+<span class="fc" id="L271">        PdfPCell badge = new PdfPCell(</span>
+<span class="fc" id="L272">                new Phrase(labels.ticketLabel() + &quot; &quot; + (index + 1) + &quot;/&quot; + total, FONT_BADGE));</span>
+<span class="fc" id="L273">        badge.setBackgroundColor(OLYMPIC_GOLD);</span>
+<span class="fc" id="L274">        badge.setBorder(Rectangle.NO_BORDER);</span>
+<span class="fc" id="L275">        badge.setHorizontalAlignment(Element.ALIGN_CENTER);</span>
+<span class="fc" id="L276">        badge.setPadding(5);</span>
+<span class="fc" id="L277">        badgeInner.addCell(badge);</span>
+<span class="fc" id="L278">        badgeCell.addElement(badgeInner);</span>
+
+<span class="fc" id="L280">        header.addCell(titleCell);</span>
+<span class="fc" id="L281">        header.addCell(badgeCell);</span>
+<span class="fc" id="L282">        doc.add(header);</span>
+
+<span class="fc" id="L284">        PdfPTable stripe = new PdfPTable(1);</span>
+<span class="fc" id="L285">        stripe.setTotalWidth(pageW);</span>
+<span class="fc" id="L286">        stripe.setLockedWidth(true);</span>
+<span class="fc" id="L287">        PdfPCell sc = new PdfPCell(new Phrase(&quot; &quot;));</span>
+<span class="fc" id="L288">        sc.setBackgroundColor(OLYMPIC_GOLD);</span>
+<span class="fc" id="L289">        sc.setBorder(Rectangle.NO_BORDER);</span>
+<span class="fc" id="L290">        sc.setFixedHeight(3f);</span>
+<span class="fc" id="L291">        stripe.addCell(sc);</span>
+<span class="fc" id="L292">        doc.add(stripe);</span>
+
+<span class="fc" id="L294">        PdfPTable body = new PdfPTable(1);</span>
+<span class="fc" id="L295">        body.setTotalWidth(pageW - margin * 2);</span>
+<span class="fc" id="L296">        body.setLockedWidth(true);</span>
+<span class="fc" id="L297">        body.setSpacingBefore(20f);</span>
+
+<span class="fc" id="L299">        addBodySection(body, buildEventSection(ticket, labels), margin);</span>
+<span class="fc" id="L300">        addSeparatorRow(body);</span>
+<span class="fc" id="L301">        addBodySection(body, buildInfoGrid(ticket, labels), margin);</span>
+<span class="fc" id="L302">        addSeparatorRow(body);</span>
+<span class="fc" id="L303">        addBodySection(body, buildQrSection(ticket, labels), margin);</span>
+<span class="fc" id="L304">        addSeparatorRow(body);</span>
+<span class="fc" id="L305">        addBodySection(body, buildPriceRow(ticket, tx, labels), margin);</span>
+
+<span class="fc" id="L307">        doc.add(body);</span>
+
+<span class="fc" id="L309">        addFooter(doc, pageW, margin, labels);</span>
+<span class="fc" id="L310">    }</span>
+
+
+    private PdfPTable buildEventSection(TicketResponseDTO ticket, PdfLabels labels) {
+<span class="fc" id="L314">        PdfPTable t = new PdfPTable(1);</span>
+<span class="fc" id="L315">        t.setWidthPercentage(100);</span>
+<span class="fc" id="L316">        addLabelRow(t, labels.eventLabel());</span>
+<span class="fc" id="L317">        addValueRow(t, ticket.event().name(), FONT_EVENT_NAME);</span>
+<span class="fc" id="L318">        addValueRow(t, ticket.event().eventDate().format(labels.dateFmt()), FONT_EVENT_META);</span>
+<span class="fc" id="L319">        addValueRow(t, ticket.event().location() + &quot; · &quot; + ticket.event().city(), FONT_EVENT_META);</span>
+<span class="fc" id="L320">        return t;</span>
+    }
+
+
+    private PdfPTable buildInfoGrid(TicketResponseDTO ticket, PdfLabels labels) throws DocumentException {
+<span class="fc" id="L325">        PdfPTable t = new PdfPTable(3);</span>
+<span class="fc" id="L326">        t.setWidthPercentage(100);</span>
+<span class="fc" id="L327">        t.setWidths(new float[]{1f, 1f, 1f});</span>
+<span class="fc" id="L328">        addInfoBox(t, labels.categoryLabel(), ticket.offer().name());</span>
+<span class="fc" id="L329">        addInfoBox(t, labels.seatsLabel(), String.valueOf(ticket.offer().numberOfTickets()));</span>
+<span class="fc" id="L330">        addInfoBox(t, labels.phaseLabel(), formatPhase(ticket.event().phase(), labels));</span>
+<span class="fc" id="L331">        return t;</span>
+    }
+
+    private PdfPTable buildQrSection(TicketResponseDTO ticket, PdfLabels labels) throws Exception {
+<span class="fc" id="L335">        byte[] qrBytes = generateQrCode(ticket.combinedKey());</span>
+<span class="fc" id="L336">        Image qrImage = Image.getInstance(qrBytes);</span>
+<span class="fc" id="L337">        qrImage.scaleAbsolute(100f, 100f);</span>
+
+<span class="fc" id="L339">        PdfPTable t = new PdfPTable(2);</span>
+<span class="fc" id="L340">        t.setWidthPercentage(100);</span>
+<span class="fc" id="L341">        t.setWidths(new float[]{1f, 2.5f});</span>
+
+<span class="fc" id="L343">        PdfPCell qrCell = new PdfPCell(qrImage, false);</span>
+<span class="fc" id="L344">        qrCell.setBackgroundColor(LIGHT_GRAY);</span>
+<span class="fc" id="L345">        qrCell.setBorder(Rectangle.NO_BORDER);</span>
+<span class="fc" id="L346">        qrCell.setPadding(10f);</span>
+<span class="fc" id="L347">        qrCell.setHorizontalAlignment(Element.ALIGN_CENTER);</span>
+<span class="fc" id="L348">        qrCell.setVerticalAlignment(Element.ALIGN_MIDDLE);</span>
+
+<span class="fc" id="L350">        PdfPCell infoCell = new PdfPCell();</span>
+<span class="fc" id="L351">        infoCell.setBackgroundColor(LIGHT_GRAY);</span>
+<span class="fc" id="L352">        infoCell.setBorder(Rectangle.NO_BORDER);</span>
+<span class="fc" id="L353">        infoCell.setPadding(12f);</span>
+<span class="fc" id="L354">        infoCell.setPaddingLeft(8f);</span>
+
+<span class="fc" id="L356">        Paragraph bcLabel = new Paragraph(labels.barcodeLabel(), FONT_LABEL);</span>
+<span class="fc" id="L357">        bcLabel.setSpacingAfter(2f);</span>
+<span class="fc" id="L358">        Paragraph bcValue = new Paragraph(ticket.barcode(), FONT_BARCODE);</span>
+<span class="fc" id="L359">        bcValue.setSpacingAfter(10f);</span>
+
+<span class="fc" id="L361">        Paragraph instrLabel = new Paragraph(labels.instructionsLabel(), FONT_LABEL);</span>
+<span class="fc" id="L362">        instrLabel.setSpacingAfter(2f);</span>
+<span class="fc" id="L363">        Paragraph instrValue = new Paragraph(labels.instructions(), FONT_INSTRUCTIONS);</span>
+
+<span class="fc" id="L365">        infoCell.addElement(bcLabel);</span>
+<span class="fc" id="L366">        infoCell.addElement(bcValue);</span>
+<span class="fc" id="L367">        infoCell.addElement(instrLabel);</span>
+<span class="fc" id="L368">        infoCell.addElement(instrValue);</span>
+
+<span class="fc" id="L370">        t.addCell(qrCell);</span>
+<span class="fc" id="L371">        t.addCell(infoCell);</span>
+<span class="fc" id="L372">        return t;</span>
+    }
+
+    private PdfPTable buildPriceRow(TicketResponseDTO ticket, TransactionResponseDTO tx,
+                                    PdfLabels labels) throws DocumentException {
+<span class="fc" id="L377">        PdfPTable t = new PdfPTable(2);</span>
+<span class="fc" id="L378">        t.setWidthPercentage(100);</span>
+<span class="fc" id="L379">        t.setWidths(new float[]{1.5f, 1f});</span>
+
+<span class="fc" id="L381">        PdfPCell refCell = new PdfPCell();</span>
+<span class="fc" id="L382">        refCell.setBorder(Rectangle.NO_BORDER);</span>
+<span class="fc" id="L383">        refCell.setPaddingBottom(4f);</span>
+<span class="fc" id="L384">        Paragraph refLabel = new Paragraph(labels.paymentRefLabel(), FONT_REF_LABEL);</span>
+<span class="fc" id="L385">        refLabel.setSpacingAfter(2f);</span>
+<span class="fc" id="L386">        Paragraph refValue = new Paragraph(tx.paymentReference(), FONT_REF_VALUE);</span>
+<span class="fc" id="L387">        refCell.addElement(refLabel);</span>
+<span class="fc" id="L388">        refCell.addElement(refValue);</span>
+
+<span class="fc" id="L390">        PdfPCell priceCell = new PdfPCell();</span>
+<span class="fc" id="L391">        priceCell.setBorder(Rectangle.NO_BORDER);</span>
+<span class="fc" id="L392">        priceCell.setHorizontalAlignment(Element.ALIGN_RIGHT);</span>
+<span class="fc" id="L393">        Paragraph priceLabel = new Paragraph(labels.ticketPriceLabel(), FONT_PRICE_LABEL);</span>
+<span class="fc" id="L394">        priceLabel.setAlignment(Element.ALIGN_RIGHT);</span>
+<span class="fc" id="L395">        priceLabel.setSpacingAfter(2f);</span>
+<span class="fc" id="L396">        String priceStr = String.format(labels.priceLocale(), &quot;%.2f\u00a0€&quot;, ticket.price());</span>
+<span class="fc" id="L397">        Paragraph priceValue = new Paragraph(priceStr, FONT_PRICE_VALUE);</span>
+<span class="fc" id="L398">        priceValue.setAlignment(Element.ALIGN_RIGHT);</span>
+<span class="fc" id="L399">        priceCell.addElement(priceLabel);</span>
+<span class="fc" id="L400">        priceCell.addElement(priceValue);</span>
+
+<span class="fc" id="L402">        t.addCell(refCell);</span>
+<span class="fc" id="L403">        t.addCell(priceCell);</span>
+<span class="fc" id="L404">        return t;</span>
+    }
+
+    private String formatPhase(Phases phase, PdfLabels labels) {
+<span class="fc bfc" id="L408" title="All 2 branches covered.">        if (phase == null) return &quot;—&quot;;</span>
+<span class="fc" id="L409">        return labels.phaseNames().getOrDefault(phase,</span>
+<span class="fc" id="L410">                phase.name().replace('_', ' ').toLowerCase(Locale.ROOT));</span>
+    }
+
+
+    private void addBodySection(PdfPTable body, PdfPTable section, float margin) {
+<span class="fc" id="L415">        PdfPCell cell = new PdfPCell(section);</span>
+<span class="fc" id="L416">        cell.setBorder(Rectangle.NO_BORDER);</span>
+<span class="fc" id="L417">        cell.setPadding(0);</span>
+<span class="fc" id="L418">        cell.setPaddingLeft(margin);</span>
+<span class="fc" id="L419">        cell.setPaddingRight(margin);</span>
+<span class="fc" id="L420">        cell.setPaddingTop(16f);</span>
+<span class="fc" id="L421">        cell.setPaddingBottom(16f);</span>
+<span class="fc" id="L422">        body.addCell(cell);</span>
+<span class="fc" id="L423">    }</span>
+
+    private void addSeparatorRow(PdfPTable body) {
+<span class="fc" id="L426">        PdfPCell sep = new PdfPCell(new Phrase(&quot; &quot;));</span>
+<span class="fc" id="L427">        sep.setBackgroundColor(BORDER_GRAY);</span>
+<span class="fc" id="L428">        sep.setBorder(Rectangle.NO_BORDER);</span>
+<span class="fc" id="L429">        sep.setFixedHeight(1f);</span>
+<span class="fc" id="L430">        body.addCell(sep);</span>
+<span class="fc" id="L431">    }</span>
+
+    private void addLabelRow(PdfPTable t, String label) {
+<span class="fc" id="L434">        PdfPCell cell = new PdfPCell(new Phrase(label, FONT_LABEL));</span>
+<span class="fc" id="L435">        cell.setBorder(Rectangle.NO_BORDER);</span>
+<span class="fc" id="L436">        cell.setPaddingBottom(3f);</span>
+<span class="fc" id="L437">        t.addCell(cell);</span>
+<span class="fc" id="L438">    }</span>
+
+    private void addValueRow(PdfPTable t, String value, Font font) {
+<span class="fc" id="L441">        PdfPCell cell = new PdfPCell(new Phrase(value, font));</span>
+<span class="fc" id="L442">        cell.setBorder(Rectangle.NO_BORDER);</span>
+<span class="fc" id="L443">        cell.setPaddingBottom(3f);</span>
+<span class="fc" id="L444">        t.addCell(cell);</span>
+<span class="fc" id="L445">    }</span>
+
+    private void addInfoBox(PdfPTable t, String label, String value) {
+<span class="fc" id="L448">        PdfPCell cell = new PdfPCell();</span>
+<span class="fc" id="L449">        cell.setBackgroundColor(LIGHT_GRAY);</span>
+<span class="fc" id="L450">        cell.setBorder(Rectangle.NO_BORDER);</span>
+<span class="fc" id="L451">        cell.setBorderColor(Color.WHITE);</span>
+<span class="fc" id="L452">        cell.setBorderWidth(3f);</span>
+<span class="fc" id="L453">        cell.setPadding(10f);</span>
+<span class="fc" id="L454">        Paragraph lbl = new Paragraph(label, FONT_LABEL);</span>
+<span class="fc" id="L455">        lbl.setSpacingAfter(4f);</span>
+<span class="fc" id="L456">        Paragraph val = new Paragraph(value, FONT_INFO_VALUE);</span>
+<span class="fc" id="L457">        cell.addElement(lbl);</span>
+<span class="fc" id="L458">        cell.addElement(val);</span>
+<span class="fc" id="L459">        t.addCell(cell);</span>
+<span class="fc" id="L460">    }</span>
+
+    private void addFooter(Document doc, float pageW, float margin, PdfLabels labels)
+            throws DocumentException {
+<span class="fc" id="L464">        PdfPTable footer = new PdfPTable(2);</span>
+<span class="fc" id="L465">        footer.setTotalWidth(pageW);</span>
+<span class="fc" id="L466">        footer.setLockedWidth(true);</span>
+<span class="fc" id="L467">        footer.setSpacingBefore(16f);</span>
+
+<span class="fc" id="L469">        PdfPCell left = new PdfPCell(new Phrase(labels.copyright(), FONT_FOOTER));</span>
+<span class="fc" id="L470">        left.setBackgroundColor(LIGHT_GRAY);</span>
+<span class="fc" id="L471">        left.setBorder(Rectangle.NO_BORDER);</span>
+<span class="fc" id="L472">        left.setPaddingLeft(margin);</span>
+<span class="fc" id="L473">        left.setPaddingTop(10f);</span>
+<span class="fc" id="L474">        left.setPaddingBottom(10f);</span>
+
+<span class="fc" id="L476">        PdfPCell right = new PdfPCell(new Phrase(labels.nonTransferable(), FONT_FOOTER));</span>
+<span class="fc" id="L477">        right.setBackgroundColor(LIGHT_GRAY);</span>
+<span class="fc" id="L478">        right.setBorder(Rectangle.NO_BORDER);</span>
+<span class="fc" id="L479">        right.setHorizontalAlignment(Element.ALIGN_RIGHT);</span>
+<span class="fc" id="L480">        right.setPaddingRight(margin);</span>
+<span class="fc" id="L481">        right.setPaddingTop(10f);</span>
+<span class="fc" id="L482">        right.setPaddingBottom(10f);</span>
+
+<span class="fc" id="L484">        footer.addCell(left);</span>
+<span class="fc" id="L485">        footer.addCell(right);</span>
+<span class="fc" id="L486">        doc.add(footer);</span>
+<span class="fc" id="L487">    }</span>
+
+    private byte[] generateQrCode(String content) throws Exception {
+<span class="fc" id="L490">        BitMatrix matrix = new MultiFormatWriter().encode(content, BarcodeFormat.QR_CODE, 200, 200);</span>
+<span class="fc" id="L491">        BufferedImage image = MatrixToImageWriter.toBufferedImage(matrix);</span>
+
+<span class="fc bfc" id="L493" title="All 2 branches covered.">        for (int y = 0; y &lt; image.getHeight(); y++) {</span>
+<span class="fc bfc" id="L494" title="All 2 branches covered.">            for (int x = 0; x &lt; image.getWidth(); x++) {</span>
+<span class="fc bfc" id="L495" title="All 2 branches covered.">                if (image.getRGB(x, y) == Color.BLACK.getRGB()) {</span>
+<span class="fc" id="L496">                    image.setRGB(x, y, OLYMPIC_BLUE.getRGB());</span>
+                }
+            }
+        }
+
+<span class="fc" id="L501">        ByteArrayOutputStream out = new ByteArrayOutputStream();</span>
+<span class="fc" id="L502">        ImageIO.write(image, &quot;PNG&quot;, out);</span>
+<span class="fc" id="L503">        return out.toByteArray();</span>
+    }
+
+<span class="fc" id="L506">    record PdfLabels(</span>
+            String subtitle,
+            String ticketLabel,
+            String eventLabel,
+            String categoryLabel,
+            String seatsLabel,
+            String phaseLabel,
+            String barcodeLabel,
+            String instructionsLabel,
+            String instructions,
+            String paymentRefLabel,
+            String ticketPriceLabel,
+            String copyright,
+            String nonTransferable,
+            DateTimeFormatter dateFmt,
+            Locale priceLocale,
+            Map&lt;Phases, String&gt; phaseNames
+    ) {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OfferService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.service</a> &gt; <span class="el_source">OfferService.java</span></div><h1>OfferService.java</h1><pre class="source lang-java linenums">package dev.jos.back.service;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.jos.back.dto.offer.CreateOfferDTO;
+import dev.jos.back.dto.offer.OfferResponseDTO;
+import dev.jos.back.entities.Offer;
+import dev.jos.back.entities.OfferTranslation;
+import dev.jos.back.dto.offer.UpdateOfferDTO;
+import dev.jos.back.exceptions.offertype.OfferNotFoundException;
+import dev.jos.back.exceptions.offertype.OfferTypeAlreadyExistsException;
+import dev.jos.back.mapper.OfferMapper;
+import dev.jos.back.repository.OfferRepository;
+import dev.jos.back.repository.OfferTranslationRepository;
+import dev.jos.back.util.LocaleResolver;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+<span class="fc" id="L27">@Slf4j</span>
+@Service
+@RequiredArgsConstructor
+public class OfferService {
+<span class="fc" id="L31">    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();</span>
+
+    private final OfferRepository repository;
+    private final OfferMapper mapper;
+    private final OfferTranslationRepository offerTranslationRepository;
+
+    private List&lt;String&gt; deserializeFeatures(String json, List&lt;String&gt; fallback) {
+        try {
+<span class="fc" id="L39">            return OBJECT_MAPPER.readValue(json, new TypeReference&lt;&gt;() {});</span>
+<span class="nc" id="L40">        } catch (Exception e) {</span>
+<span class="nc" id="L41">            log.warn(&quot;Failed to deserialize offer features: {}&quot;, e.getMessage());</span>
+<span class="nc" id="L42">            return fallback;</span>
+        }
+    }
+
+    private Map&lt;Long, OfferTranslation&gt; getTranslationMap(List&lt;Offer&gt; offers, String locale) {
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        if (&quot;fr&quot;.equals(locale)) return Collections.emptyMap();</span>
+<span class="fc" id="L48">        List&lt;Long&gt; ids = offers.stream().map(Offer::getId).toList();</span>
+<span class="fc" id="L49">        return offerTranslationRepository.findByOfferIdsAndLocale(ids, locale).stream()</span>
+<span class="fc" id="L50">                .collect(Collectors.toMap(t -&gt; t.getOffer().getId(), t -&gt; t));</span>
+    }
+
+    private OfferResponseDTO mapWithLocale(Offer offer, Map&lt;Long, OfferTranslation&gt; translationMap) {
+<span class="fc" id="L54">        OfferTranslation t = translationMap.get(offer.getId());</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">        if (t == null) return mapper.toResponseDTO(offer);</span>
+<span class="fc" id="L56">        List&lt;String&gt; features = deserializeFeatures(t.getFeatures(), offer.getFeatures());</span>
+<span class="fc" id="L57">        return mapper.toResponseDTO(offer, t.getName(), t.getDescription(), features);</span>
+    }
+
+    public List&lt;OfferResponseDTO&gt; getAllOfferTypes(String locale) {
+<span class="fc" id="L61">        String lang = LocaleResolver.resolve(locale);</span>
+<span class="fc" id="L62">        List&lt;Offer&gt; offers = repository.findAll();</span>
+<span class="fc" id="L63">        Map&lt;Long, OfferTranslation&gt; translations = getTranslationMap(offers, lang);</span>
+<span class="fc" id="L64">        return offers.stream().map(o -&gt; mapWithLocale(o, translations)).toList();</span>
+    }
+
+    public OfferResponseDTO createOfferType(CreateOfferDTO dto) {
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (repository.findByName(dto.name()).isPresent()) {</span>
+<span class="fc" id="L69">            log.warn(&quot;Offre ignorée - déjà existante : {}&quot;, dto.name());</span>
+<span class="fc" id="L70">            throw new OfferTypeAlreadyExistsException(&quot;Cette offre existe déjà.&quot;);</span>
+        }
+<span class="fc" id="L72">        Offer offerType = mapper.toEntity(dto);</span>
+<span class="fc" id="L73">        Offer savedOfferType = repository.save(offerType);</span>
+<span class="fc" id="L74">        return mapper.toResponseDTO(savedOfferType);</span>
+    }
+
+    public List&lt;OfferResponseDTO&gt; createOfferTypeBulk(List&lt;CreateOfferDTO&gt; dtoRequest) {
+<span class="fc" id="L78">        List&lt;Offer&gt; offersToSave = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L79">        dtoRequest.forEach(dto -&gt; offersToSave.add(mapper.toEntity(dto)));</span>
+<span class="fc" id="L80">        List&lt;Offer&gt; savedOfferTypes = repository.saveAll(offersToSave);</span>
+<span class="fc" id="L81">        return savedOfferTypes.stream().map(mapper::toResponseDTO).toList();</span>
+    }
+
+    @Transactional
+    public OfferResponseDTO updateOffer(Long id, UpdateOfferDTO dto) {
+<span class="fc" id="L86">        Offer offer = repository.findById(id)</span>
+<span class="fc" id="L87">                .orElseThrow(() -&gt; new OfferNotFoundException(&quot;Offre non trouvée&quot;));</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">        if (dto.name() != null) offer.setName(dto.name());</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if (dto.description() != null) offer.setDescription(dto.description());</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">        if (dto.price() != null) offer.setPrice(dto.price());</span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if (dto.numberOfTickets() != null) offer.setNumberOfTickets(dto.numberOfTickets());</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        if (dto.isActive() != null) offer.setIsActive(dto.isActive());</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        if (dto.displayOrder() != null) offer.setDisplayOrder(dto.displayOrder());</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if (dto.features() != null) offer.setFeatures(dto.features());</span>
+<span class="fc" id="L95">        return mapper.toResponseDTO(repository.saveAndFlush(offer));</span>
+    }
+
+    @Transactional
+    public void deleteOffer(Long id) {
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        if (!repository.existsById(id)) {</span>
+<span class="fc" id="L101">            throw new OfferNotFoundException(&quot;Offre non trouvée&quot;);</span>
+        }
+<span class="fc" id="L103">        repository.deleteById(id);</span>
+<span class="fc" id="L104">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OfferController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.controller</a> &gt; <span class="el_source">OfferController.java</span></div><h1>OfferController.java</h1><pre class="source lang-java linenums">package dev.jos.back.controller;
+
+import dev.jos.back.dto.offer.BulkOfferResponseDTO;
+import dev.jos.back.dto.offer.CreateOfferDTO;
+import dev.jos.back.dto.offer.OfferResponseDTO;
+import dev.jos.back.dto.offer.UpdateOfferDTO;
+import dev.jos.back.service.OfferService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * Contrôleur REST pour la gestion des offres.
+ * Permet de créer et consulter les différentes offres disponibles.
+ *
+ * @see OfferService
+ * @see OfferResponseDTO
+ */
+@RestController
+@RequestMapping(&quot;/api/offer&quot;)
+@RequiredArgsConstructor
+public class OfferController {
+    private final OfferService offerService;
+
+    /**
+     * Créer en masse les offres.
+     * Réservé aux administrateurs.
+     *
+     * @param dto une list des informations de l'offre à créer (nom, description, caractéristiques)
+     * @return {@code ResponseEntity&lt;BulkOfferResponseDTO&gt;} contenant les offres créees et le nombre d'offres
+     * @throws jakarta.validation.ConstraintViolationException                   si les données du type d'offre sont invalides
+     * @throws dev.jos.back.exceptions.offertype.OfferTypeAlreadyExistsException si un type d'offre
+     *                                                                           avec le même nom existe déjà
+     * @throws org.springframework.security.access.AccessDeniedException         si l'utilisateur
+     *                                                                           n'a pas le rôle ADMIN
+     */
+    @PostMapping(&quot;/bulk&quot;)
+    public ResponseEntity&lt;BulkOfferResponseDTO&gt; createOfferType(
+            @Valid @RequestBody List&lt;CreateOfferDTO&gt; dto) {
+
+<span class="nc" id="L45">        List&lt;OfferResponseDTO&gt; created = offerService.createOfferTypeBulk(dto);</span>
+
+<span class="nc" id="L47">        BulkOfferResponseDTO response = new BulkOfferResponseDTO(</span>
+<span class="nc" id="L48">                created.size(),</span>
+                created
+        );
+
+<span class="nc" id="L52">        return ResponseEntity.status(HttpStatus.CREATED).body(response);</span>
+    }
+
+    /**
+     * Crée une offre unique.
+     * Réservé aux administrateurs.
+     *
+     * @param dtoRequest les informations de l'offre à créer (nom, description, nombre de billets, prix)
+     * @return {@code ResponseEntity&lt;OfferResponseDTO&gt;} contenant l'offre créée avec son identifiant généré
+     * @throws jakarta.validation.ConstraintViolationException           si les données de l'offre sont invalides
+     * @throws org.springframework.security.access.AccessDeniedException si l'utilisateur n'a pas le rôle ADMIN
+     */
+    @PostMapping
+    public ResponseEntity&lt;OfferResponseDTO&gt; createOfferType(
+            @Valid @RequestBody CreateOfferDTO dtoRequest) {
+
+<span class="nc" id="L68">        OfferResponseDTO created = offerService.createOfferType(dtoRequest);</span>
+<span class="nc" id="L69">        return ResponseEntity.status(HttpStatus.CREATED).body(created);</span>
+    }
+
+    /**
+     * Récupère tous les types d'offres.
+     *
+     * @return {@code ResponseEntity&lt;List&lt;OfferResponseDTO&gt;&gt;} contenant la liste complète
+     * de toutes les offres
+     */
+    @GetMapping(&quot;/all&quot;)
+    public ResponseEntity&lt;List&lt;OfferResponseDTO&gt;&gt; getAllOfferTypes(
+            @RequestHeader(value = &quot;Accept-Language&quot;, defaultValue = &quot;fr&quot;) String locale) {
+<span class="nc" id="L81">        return ResponseEntity.ok(offerService.getAllOfferTypes(locale));</span>
+    }
+
+    /**
+     * Met à jour une offre existante.
+     * Réservé aux administrateurs.
+     */
+    @PutMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;OfferResponseDTO&gt; updateOffer(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateOfferDTO dto) {
+<span class="nc" id="L92">        OfferResponseDTO updated = offerService.updateOffer(id, dto);</span>
+<span class="nc" id="L93">        return ResponseEntity.ok(updated);</span>
+    }
+
+    /**
+     * Supprime une offre par son identifiant.
+     * Réservé aux administrateurs.
+     */
+    @DeleteMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;Void&gt; deleteOffer(@PathVariable Long id) {
+<span class="nc" id="L102">        offerService.deleteOffer(id);</span>
+<span class="nc" id="L103">        return ResponseEntity.noContent().build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

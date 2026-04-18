@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SportController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.controller</a> &gt; <span class="el_source">SportController.java</span></div><h1>SportController.java</h1><pre class="source lang-java linenums">package dev.jos.back.controller;
+
+import dev.jos.back.dto.sport.BulkSportResponseDTO;
+import dev.jos.back.dto.sport.CreateSportDTO;
+import dev.jos.back.dto.sport.SportResponseDTO;
+import dev.jos.back.dto.sport.UpdateSportDTO;
+import dev.jos.back.service.SportService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * Contrôleur REST pour la gestion des sports.
+ * Fournit des endpoints pour créer, consulter et filtrer les sports.
+ *
+ * @see SportService
+ * @see SportResponseDTO
+ */
+@RestController
+@RequestMapping(&quot;/api/sport&quot;)
+@RequiredArgsConstructor
+public class SportController {
+
+    private final SportService sportService;
+
+    /**
+     * Récupère la liste de tous les sports disponibles.
+     *
+     * @return {@code ResponseEntity&lt;List&lt;SportResponseDTO&gt;&gt;} contenant la liste complète des sports
+     */
+    @GetMapping
+    public ResponseEntity&lt;List&lt;SportResponseDTO&gt;&gt; getAllSports(
+            @RequestHeader(value = &quot;Accept-Language&quot;, defaultValue = &quot;fr&quot;) String locale) {
+<span class="nc" id="L38">        return ResponseEntity.ok(sportService.getAllSports(locale));</span>
+    }
+
+    /**
+     * Récupère le sport selon son id.
+     *
+     * @param id le sport recherché
+     * @return {@code ResponseEntity&lt;SportResponseDTO&gt;} contenant les détails complets du sport
+     */
+    @GetMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;SportResponseDTO&gt; getSport(
+            @PathVariable Long id,
+            @RequestHeader(value = &quot;Accept-Language&quot;, defaultValue = &quot;fr&quot;) String locale) {
+<span class="nc" id="L51">        SportResponseDTO sport = sportService.getSportById(id, locale);</span>
+<span class="nc" id="L52">        return ResponseEntity.ok(sport);</span>
+    }
+
+    /**
+     * Crée plusieurs sports en une seule opération.
+     * Réservé aux administrateurs.
+     *
+     * @param sports liste des sports à créer
+     * @return {@code ResponseEntity&lt;BulkSportResponseDTO&gt;} contenant le résumé de la création
+     * (nombre total de sports créés et liste détaillée des sports)
+     * @throws jakarta.validation.ConstraintViolationException           si un ou plusieurs sports
+     *                                                                   contiennent des données invalides
+     * @throws org.springframework.security.access.AccessDeniedException si l'utilisateur
+     *                                                                   n'a pas le rôle ADMIN
+     */
+    @PostMapping(&quot;/bulk&quot;)
+    public ResponseEntity&lt;BulkSportResponseDTO&gt; createSportsBulk(
+            @Valid @RequestBody List&lt;CreateSportDTO&gt; sports) {
+
+<span class="nc" id="L71">        List&lt;SportResponseDTO&gt; created = sportService.createSportsBulk(sports);</span>
+
+<span class="nc" id="L73">        BulkSportResponseDTO response = new BulkSportResponseDTO(</span>
+                created,
+<span class="nc" id="L75">                created.size()</span>
+        );
+
+<span class="nc" id="L78">        return ResponseEntity.status(HttpStatus.CREATED).body(response);</span>
+    }
+
+    /**
+     * Met à jour un sport existant.
+     * Réservé aux administrateurs.
+     */
+    @PutMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;SportResponseDTO&gt; updateSport(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateSportDTO dto) {
+<span class="nc" id="L89">        SportResponseDTO updated = sportService.updateSport(id, dto);</span>
+<span class="nc" id="L90">        return ResponseEntity.ok(updated);</span>
+    }
+
+    /**
+     * Supprime un sport par son identifiant.
+     * Réservé aux administrateurs.
+     */
+    @DeleteMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;Void&gt; deleteSport(@PathVariable Long id) {
+<span class="nc" id="L99">        sportService.deleteSport(id);</span>
+<span class="nc" id="L100">        return ResponseEntity.noContent().build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

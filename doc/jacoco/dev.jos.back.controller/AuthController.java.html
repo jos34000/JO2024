@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.controller</a> &gt; <span class="el_source">AuthController.java</span></div><h1>AuthController.java</h1><pre class="source lang-java linenums">package dev.jos.back.controller;
+
+import dev.jos.back.dto.user.CreateUserDTO;
+import dev.jos.back.dto.user.LoginRequestDTO;
+import dev.jos.back.dto.user.UserResponseDTO;
+import dev.jos.back.entities.User;
+import dev.jos.back.mapper.UserMapper;
+import dev.jos.back.properties.JwtProperties;
+import dev.jos.back.repository.UserRepository;
+import dev.jos.back.service.*;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * Contrôleur REST pour la gestion de l'authentification.
+ * Gère l'inscription, la connexion, le rafraîchissement des tokens et la déconnexion.
+ * Utilise des cookies HTTP-only pour stocker les tokens JWT.
+ *
+ * @see JwtService
+ * @see CookieService
+ * @see UserService
+ */
+@RestController
+@RequestMapping(&quot;/api/auth&quot;)
+@RequiredArgsConstructor
+public class AuthController {
+
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
+    private final CookieService cookieService;
+    private final UserService userService;
+    private final CustomUserDetailsService userDetailsService;
+    private final JwtProperties jwtProperties;
+    private final UserRepository userRepository;
+    private final TwoFactorService twoFactorService;
+    private final UserMapper userMapper;
+
+    /**
+     * Inscrit un nouvel utilisateur et retourne des tokens d'authentification.
+     *
+     * @param request les informations d'inscription de l'utilisateur (email, mot de passe, etc.)
+     * @return {@code ResponseEntity&lt;LoginResponseDTO&gt;} contenant les informations de l'utilisateur
+     * nouvellement créé avec les cookies JWT (access token et refresh token)
+     * @throws dev.jos.back.exceptions.user.UserAlreadyExistsException si un utilisateur avec cet email existe déjà
+     * @throws jakarta.validation.ConstraintViolationException         si les données de la requête sont invalides
+     */
+    @PostMapping(&quot;/register&quot;)
+    public ResponseEntity&lt;UserResponseDTO&gt; register(@Valid @RequestBody CreateUserDTO request) {
+<span class="nc" id="L61">        UserResponseDTO user = userService.createUser(request);</span>
+
+<span class="nc" id="L63">        UserDetails userDetails = userDetailsService.loadUserByUsername(request.email());</span>
+<span class="nc" id="L64">        List&lt;String&gt; roles = userDetails.getAuthorities().stream()</span>
+<span class="nc" id="L65">                .map(GrantedAuthority::getAuthority)</span>
+<span class="nc" id="L66">                .toList();</span>
+
+<span class="nc" id="L68">        String accessToken = jwtService.generateAccessToken(request.email(), roles);</span>
+<span class="nc" id="L69">        String refreshToken = jwtService.generateRefreshToken(request.email());</span>
+
+<span class="nc" id="L71">        return ResponseEntity.status(HttpStatus.CREATED)</span>
+<span class="nc" id="L72">                .header(HttpHeaders.SET_COOKIE,</span>
+<span class="nc" id="L73">                        cookieService.createAccessTokenCookie(accessToken).toString())</span>
+<span class="nc" id="L74">                .header(HttpHeaders.SET_COOKIE,</span>
+<span class="nc" id="L75">                        cookieService.createRefreshTokenCookie(refreshToken).toString())</span>
+<span class="nc" id="L76">                .body(user);</span>
+    }
+
+    /**
+     * Authentifie un utilisateur existant.
+     *
+     * @param request les identifiants de connexion (email et mot de passe)
+     * @return {@code ResponseEntity&lt;UserResponseDTO&gt;} contenant les informations de l'utilisateur
+     * avec les cookies JWT (access token et refresh token) ; si le 2FA est activé, retourne
+     * 202 Accepted avec les informations utilisateur mais sans cookies JWT — le client doit
+     * alors appeler {@code POST /api/2fa/verify} pour finaliser l'authentification
+     * @throws org.springframework.security.authentication.BadCredentialsException     si les identifiants sont incorrects
+     * @throws org.springframework.security.core.userdetails.UsernameNotFoundException si l'utilisateur n'existe pas
+     */
+    @PostMapping(&quot;/login&quot;)
+    public ResponseEntity&lt;UserResponseDTO&gt; login(@RequestBody LoginRequestDTO request) {
+
+<span class="nc" id="L93">        Authentication authentication = authenticationManager.authenticate(</span>
+                new UsernamePasswordAuthenticationToken(
+<span class="nc" id="L95">                        request.email(),</span>
+<span class="nc" id="L96">                        request.password()</span>
+                )
+        );
+
+<span class="nc" id="L100">        UserDetails userDetails = (UserDetails) authentication.getPrincipal();</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        String email = userDetails != null ? userDetails.getUsername() : null;</span>
+
+<span class="nc" id="L103">        User user = userRepository.findByEmail(email)</span>
+<span class="nc" id="L104">                .orElseThrow(() -&gt; new UsernameNotFoundException(&quot;Utilisateur introuvable&quot;));</span>
+
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (user.isMfaEnabled()) {</span>
+<span class="nc" id="L107">            twoFactorService.sendCode(email);</span>
+<span class="nc" id="L108">            return ResponseEntity</span>
+<span class="nc" id="L109">                    .accepted()</span>
+<span class="nc" id="L110">                    .body(userMapper.toResponseDTO(user));</span>
+        }
+
+
+<span class="nc" id="L114">        List&lt;String&gt; roles = null;</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">        if (userDetails != null) {</span>
+<span class="nc" id="L116">            roles = userDetails.getAuthorities().stream()</span>
+<span class="nc" id="L117">                    .map(GrantedAuthority::getAuthority)</span>
+<span class="nc" id="L118">                    .toList();</span>
+        }
+
+<span class="nc" id="L121">        String accessToken = jwtService.generateAccessToken(email, roles);</span>
+<span class="nc" id="L122">        String refreshToken = jwtService.generateRefreshToken(email);</span>
+
+<span class="nc" id="L124">        UserResponseDTO userResponse = userService.getUserResponseDto(email);</span>
+
+<span class="nc" id="L126">        return ResponseEntity.ok()</span>
+<span class="nc" id="L127">                .header(HttpHeaders.SET_COOKIE,</span>
+<span class="nc" id="L128">                        cookieService.createAccessTokenCookie(accessToken).toString())</span>
+<span class="nc" id="L129">                .header(HttpHeaders.SET_COOKIE,</span>
+<span class="nc" id="L130">                        cookieService.createRefreshTokenCookie(refreshToken).toString())</span>
+<span class="nc" id="L131">                .body(userResponse);</span>
+    }
+
+    /**
+     * Rafraîchit l'access token en utilisant le refresh token.
+     *
+     * @param refreshToken le refresh token provenant du cookie HTTP-only
+     * @return {@code ResponseEntity&lt;Void&gt;} avec les nouveaux cookies JWT
+     * (nouvel access token et nouveau refresh token)
+     * @throws io.jsonwebtoken.ExpiredJwtException si le refresh token a expiré
+     * @throws io.jsonwebtoken.JwtException        si le refresh token est invalide ou corrompu
+     *
+     */
+    @PostMapping(&quot;/refresh&quot;)
+    public ResponseEntity&lt;Void&gt; refresh(
+            @CookieValue(name = &quot;${jwt.refresh-token.cookie-name}&quot;) String refreshToken) {
+
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        if (!jwtService.validateToken(refreshToken)) {</span>
+<span class="nc" id="L149">            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();</span>
+        }
+
+<span class="nc" id="L152">        String email = jwtService.getUsernameFromToken(refreshToken);</span>
+
+<span class="nc" id="L154">        UserDetails userDetails = userDetailsService.loadUserByUsername(email);</span>
+
+<span class="nc" id="L156">        List&lt;String&gt; roles = userDetails.getAuthorities().stream()</span>
+<span class="nc" id="L157">                .map(GrantedAuthority::getAuthority)</span>
+<span class="nc" id="L158">                .toList();</span>
+
+<span class="nc" id="L160">        String newAccessToken = jwtService.generateAccessToken(email, roles);</span>
+<span class="nc" id="L161">        String newRefreshToken = jwtService.generateRefreshToken(email);</span>
+
+<span class="nc" id="L163">        return ResponseEntity.ok()</span>
+<span class="nc" id="L164">                .header(HttpHeaders.SET_COOKIE,</span>
+<span class="nc" id="L165">                        cookieService.createAccessTokenCookie(newAccessToken).toString())</span>
+<span class="nc" id="L166">                .header(HttpHeaders.SET_COOKIE,</span>
+<span class="nc" id="L167">                        cookieService.createRefreshTokenCookie(newRefreshToken).toString())</span>
+<span class="nc" id="L168">                .build();</span>
+    }
+
+    /**
+     * Déconnecte l'utilisateur en supprimant les cookies de tokens.
+     *
+     * @return {@code ResponseEntity&lt;Void&gt;} vide avec les cookies de suppression
+     */
+    @PostMapping(&quot;/logout&quot;)
+    public ResponseEntity&lt;Void&gt; logout() {
+<span class="nc" id="L178">        return ResponseEntity.noContent()</span>
+<span class="nc" id="L179">                .header(HttpHeaders.SET_COOKIE,</span>
+<span class="nc" id="L180">                        cookieService.createDeleteCookie(</span>
+<span class="nc" id="L181">                                jwtProperties.getAccessToken().getCookieName()).toString())</span>
+<span class="nc" id="L182">                .header(HttpHeaders.SET_COOKIE,</span>
+<span class="nc" id="L183">                        cookieService.createDeleteCookie(</span>
+<span class="nc" id="L184">                                jwtProperties.getRefreshToken().getCookieName()).toString())</span>
+<span class="nc" id="L185">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CheckoutRequestDTO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.dto.payment</a> &gt; <span class="el_source">CheckoutRequestDTO.java</span></div><h1>CheckoutRequestDTO.java</h1><pre class="source lang-java linenums">package dev.jos.back.dto.payment;
+
+import dev.jos.back.util.enums.PaymentMethod;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+/**
+ * DTO représentant la requête de paiement transmise lors du checkout.
+ *
+ * @param cardNumber    le numéro de carte bancaire (16 chiffres)
+ * @param expiryMonth   le mois d'expiration (1 à 12)
+ * @param expiryYear    l'année d'expiration (2024 minimum)
+ * @param cvv           le code de sécurité de la carte
+ * @param paymentMethod la méthode de paiement choisie
+ */
+<span class="fc" id="L18">public record CheckoutRequestDTO(</span>
+        @NotBlank(message = &quot;Le numéro de carte est requis&quot;)
+        String cardNumber,
+
+        @Min(value = 1, message = &quot;Le mois d'expiration doit être entre 1 et 12&quot;)
+        @Max(value = 12, message = &quot;Le mois d'expiration doit être entre 1 et 12&quot;)
+        int expiryMonth,
+
+        @Min(value = 2024, message = &quot;L'année d'expiration est invalide&quot;)
+        int expiryYear,
+
+        @NotBlank(message = &quot;Le CVV est requis&quot;)
+        String cvv,
+
+        @NotNull(message = &quot;La méthode de paiement est requise&quot;)
+        PaymentMethod paymentMethod
+) {}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

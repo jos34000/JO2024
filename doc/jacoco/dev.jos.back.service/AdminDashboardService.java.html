@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AdminDashboardService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.service</a> &gt; <span class="el_source">AdminDashboardService.java</span></div><h1>AdminDashboardService.java</h1><pre class="source lang-java linenums">package dev.jos.back.service;
+
+import dev.jos.back.dto.admin.DashboardResponseDTO;
+import dev.jos.back.dto.admin.OfferSalesDTO;
+import dev.jos.back.repository.TicketRepository;
+import dev.jos.back.repository.TransactionRepository;
+import dev.jos.back.util.enums.TransactionStatus;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class AdminDashboardService {
+
+    private final TransactionRepository transactionRepository;
+    private final TicketRepository ticketRepository;
+
+    public DashboardResponseDTO getDashboard() {
+<span class="fc" id="L26">        BigDecimal totalRevenue = transactionRepository.sumCompletedRevenue();</span>
+<span class="fc" id="L27">        Long totalTicketsSold = ticketRepository.countSoldTickets();</span>
+
+<span class="fc" id="L29">        List&lt;Object[]&gt; statusRows = transactionRepository.countByStatus();</span>
+<span class="fc" id="L30">        Map&lt;String, Long&gt; transactionsByStatus = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L31">        long totalTransactions = 0L;</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        for (Object[] row : statusRows) {</span>
+<span class="fc" id="L33">            String key = ((TransactionStatus) row[0]).name();</span>
+<span class="fc" id="L34">            long count = (Long) row[1];</span>
+<span class="fc" id="L35">            transactionsByStatus.put(key, count);</span>
+<span class="fc" id="L36">            totalTransactions += count;</span>
+<span class="fc" id="L37">        }</span>
+
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        long total = totalTicketsSold != null ? totalTicketsSold : 0L;</span>
+<span class="fc" id="L40">        List&lt;OfferSalesDTO&gt; salesByOffer = ticketRepository.findSalesByOffer().stream()</span>
+<span class="fc" id="L41">                .map(o -&gt; new OfferSalesDTO(</span>
+<span class="fc" id="L42">                        o.offerName(),</span>
+<span class="fc" id="L43">                        o.ticketsSold(),</span>
+<span class="fc" id="L44">                        o.revenue(),</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">                        total &gt; 0 ? Math.round(o.ticketsSold() * 10000.0 / total) / 100.0 : 0.0</span>
+                ))
+<span class="fc" id="L47">                .toList();</span>
+
+<span class="fc" id="L49">        return new DashboardResponseDTO(</span>
+                totalRevenue,
+                totalTicketsSold,
+<span class="fc" id="L52">                totalTransactions,</span>
+                transactionsByStatus,
+                salesByOffer,
+<span class="fc" id="L55">                ticketRepository.findTop10EventsBySales(),</span>
+<span class="fc" id="L56">                ticketRepository.findSalesBySport()</span>
+        );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

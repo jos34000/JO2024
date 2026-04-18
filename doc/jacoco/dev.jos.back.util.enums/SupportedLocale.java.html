@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SupportedLocale.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.util.enums</a> &gt; <span class="el_source">SupportedLocale.java</span></div><h1>SupportedLocale.java</h1><pre class="source lang-java linenums">package dev.jos.back.util.enums;
+
+import java.util.Locale;
+
+<span class="fc" id="L5">public enum SupportedLocale {</span>
+<span class="fc" id="L6">    FR(&quot;fr&quot;, Locale.FRENCH),</span>
+<span class="fc" id="L7">    EN(&quot;en&quot;, Locale.ENGLISH),</span>
+<span class="fc" id="L8">    DE(&quot;de&quot;, Locale.GERMAN),</span>
+<span class="fc" id="L9">    ES(&quot;es&quot;, Locale.of(&quot;es&quot;));</span>
+
+    public final String code;
+    public final Locale javaLocale;
+<span class="fc" id="L13">    public static final SupportedLocale DEFAULT = FR;</span>
+
+<span class="fc" id="L15">    SupportedLocale(String code, Locale javaLocale) {</span>
+<span class="fc" id="L16">        this.code = code;</span>
+<span class="fc" id="L17">        this.javaLocale = javaLocale;</span>
+<span class="fc" id="L18">    }</span>
+
+    /**
+     * Returns the SupportedLocale matching the first language tag in {@code raw}.
+     * Splits on {@code ,}, {@code ;}, and {@code -} and matches the first token.
+     * Returns {@link #DEFAULT} for null, blank, or unrecognised input.
+     */
+    public static SupportedLocale from(String raw) {
+<span class="fc bfc" id="L26" title="All 4 branches covered.">        if (raw == null || raw.isBlank()) return DEFAULT;</span>
+<span class="fc" id="L27">        String tag = raw.split(&quot;[,;\\-]&quot;)[0].trim().toLowerCase();</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        for (SupportedLocale sl : values()) {</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">            if (sl.code.equals(tag)) return sl;</span>
+        }
+<span class="fc" id="L31">        return DEFAULT;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

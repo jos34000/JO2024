@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TwoFactorService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.service</a> &gt; <span class="el_source">TwoFactorService.java</span></div><h1>TwoFactorService.java</h1><pre class="source lang-java linenums">package dev.jos.back.service;
+
+import dev.jos.back.entities.TwoFactorCode;
+import dev.jos.back.entities.User;
+import dev.jos.back.exceptions.twofactor.BadTwoFactorCodeException;
+import dev.jos.back.exceptions.twofactor.TwoFactorCodeNotFoundException;
+import dev.jos.back.exceptions.twofactor.TwoFactorMaxAttemptsException;
+import dev.jos.back.exceptions.user.UserNotFoundException;
+import dev.jos.back.repository.TwoFactorCodeRepository;
+import dev.jos.back.repository.UserRepository;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+
+@Service
+@RequiredArgsConstructor
+public class TwoFactorService {
+
+    private final TwoFactorCodeRepository repository;
+    private final UserRepository userRepository;
+    private final EmailService emailService;
+
+    @Value(&quot;${two-factor.expiration}&quot;)
+    private int expiration;
+
+    @Value(&quot;${two-factor.max-attempts}&quot;)
+    private int maxAttempts;
+
+    @Transactional
+    public void sendCode(String userEmail) {
+<span class="fc" id="L35">        User user = userRepository.findByEmail(userEmail)</span>
+<span class="fc" id="L36">                .orElseThrow(() -&gt; new UserNotFoundException(&quot;L'utilisateur n'existe pas&quot;));</span>
+
+<span class="fc" id="L38">        repository.invalidateAll(userEmail);</span>
+
+<span class="fc" id="L40">        TwoFactorCode twoFactorCode = new TwoFactorCode();</span>
+<span class="fc" id="L41">        twoFactorCode.setUser(user);</span>
+<span class="fc" id="L42">        twoFactorCode.setCode(generateCode());</span>
+<span class="fc" id="L43">        twoFactorCode.setExpiresAt(LocalDateTime.now().plusMinutes(expiration));</span>
+
+<span class="fc" id="L45">        repository.save(twoFactorCode);</span>
+
+<span class="fc" id="L47">        emailService.sendTwoFactorEmail(user.getEmail(), user.getFirstName(), twoFactorCode.getCode(), expiration, user.getLocale());</span>
+<span class="fc" id="L48">    }</span>
+
+    public void verifyCode(String userEmail, String submittedCode) {
+<span class="fc" id="L51">        TwoFactorCode twoFactorCode = repository.findLatestValid(userEmail, LocalDateTime.now())</span>
+<span class="fc" id="L52">                .orElseThrow(() -&gt; new TwoFactorCodeNotFoundException(&quot;Pas de code valide.&quot;));</span>
+
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (!twoFactorCode.getCode().equals(submittedCode)) {</span>
+<span class="fc" id="L55">            int attempts = twoFactorCode.getFailedAttempts() + 1;</span>
+<span class="fc" id="L56">            twoFactorCode.setFailedAttempts(attempts);</span>
+
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            if (attempts &gt;= maxAttempts) {</span>
+<span class="fc" id="L59">                twoFactorCode.setUsed(true);</span>
+            }
+
+<span class="fc" id="L62">            repository.saveAndFlush(twoFactorCode);</span>
+
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            if (attempts &gt;= maxAttempts) {</span>
+<span class="fc" id="L65">                throw new TwoFactorMaxAttemptsException(&quot;Tentatives maximales atteintes pour ce code.&quot;);</span>
+            }
+<span class="fc" id="L67">            throw new BadTwoFactorCodeException(&quot;Code invalide.&quot;);</span>
+        }
+
+<span class="fc" id="L70">        twoFactorCode.setUsed(true);</span>
+<span class="fc" id="L71">        repository.saveAndFlush(twoFactorCode);</span>
+<span class="fc" id="L72">    }</span>
+
+    @Transactional
+    public void toggle(String userEmail, boolean enabled) {
+<span class="fc" id="L76">        User user = userRepository.findByEmail(userEmail)</span>
+<span class="fc" id="L77">                .orElseThrow(() -&gt; new UserNotFoundException(&quot;L'utilisateur n'existe pas&quot;));</span>
+
+<span class="fc" id="L79">        user.setMfaEnabled(enabled);</span>
+<span class="fc" id="L80">        userRepository.save(user);</span>
+<span class="fc" id="L81">    }</span>
+
+    @Transactional
+    public void purgeExpiredCodes() {
+<span class="fc" id="L85">        repository.deleteExpiredOrUsed(LocalDateTime.now());</span>
+<span class="fc" id="L86">    }</span>
+
+    private String generateCode() {
+<span class="fc" id="L89">        return String.format(&quot;%06d&quot;, new SecureRandom().nextInt(1_000_000));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

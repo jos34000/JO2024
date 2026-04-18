@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OfferMapper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">back</a> &gt; <a href="index.source.html" class="el_package">dev.jos.back.mapper</a> &gt; <span class="el_source">OfferMapper.java</span></div><h1>OfferMapper.java</h1><pre class="source lang-java linenums">package dev.jos.back.mapper;
+
+import dev.jos.back.dto.offer.CreateOfferDTO;
+import dev.jos.back.dto.offer.OfferResponseDTO;
+import dev.jos.back.entities.Offer;
+import org.springframework.stereotype.Component;
+
+@Component
+<span class="fc" id="L9">public class OfferMapper {</span>
+    public Offer toEntity(CreateOfferDTO dto) {
+<span class="fc" id="L11">        return Offer.builder()</span>
+<span class="fc" id="L12">                .name(dto.name())</span>
+<span class="fc" id="L13">                .description(dto.description())</span>
+<span class="fc" id="L14">                .price(dto.price())</span>
+<span class="fc" id="L15">                .numberOfTickets(dto.numberOfTickets())</span>
+<span class="fc" id="L16">                .isActive(dto.isActive())</span>
+<span class="fc" id="L17">                .displayOrder(dto.displayOrder())</span>
+<span class="fc" id="L18">                .features(dto.features())</span>
+<span class="fc" id="L19">                .build();</span>
+    }
+
+    public OfferResponseDTO toResponseDTO(Offer entity) {
+<span class="fc" id="L23">        return toResponseDTO(entity, entity.getName(), entity.getDescription(), entity.getFeatures());</span>
+    }
+
+    public OfferResponseDTO toResponseDTO(Offer entity, String name, String description, java.util.List&lt;String&gt; features) {
+<span class="fc" id="L27">        return OfferResponseDTO.builder()</span>
+<span class="fc" id="L28">                .id(entity.getId())</span>
+<span class="fc" id="L29">                .name(name)</span>
+<span class="fc" id="L30">                .description(description)</span>
+<span class="fc" id="L31">                .price(entity.getPrice())</span>
+<span class="fc" id="L32">                .numberOfTickets(entity.getNumberOfTickets())</span>
+<span class="fc" id="L33">                .isActive(entity.getIsActive())</span>
+<span class="fc" id="L34">                .displayOrder(entity.getDisplayOrder())</span>
+<span class="fc" id="L35">                .features(features)</span>
+<span class="fc" id="L36">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
